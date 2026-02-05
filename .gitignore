@@ -1,0 +1,25 @@
+node_modules
+.env
+dist
+.DS_Store
+*.log
+client/dist
+server/dist
+client/node_modules
+server/node_modules
+
+# Database
+server/database.db
+*.sqlite
+*.db
+
+# User Uploads & Generated Content
+server/public/uploads/*
+server/public/generated/*
+!server/public/uploads/.gitkeep
+!server/public/generated/.gitkeep
+
+# IDEs
+.idea
+.vscode
+*.swp

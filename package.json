@@ -1,0 +1,22 @@
+{
+  "name": "online-gmb-qr",
+  "version": "1.0.0",
+  "description": "GMB QR Code Design Generator",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=@gmb-qr/client\" \"npm run dev --workspace=@gmb-qr/server\"",
+    "build": "npm run build --workspace=@gmb-qr/client",
+    "start": "npm start --workspace=@gmb-qr/server",
+    "install:all": "npm install && npm install --workspace=@gmb-qr/client && npm install --workspace=@gmb-qr/server"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

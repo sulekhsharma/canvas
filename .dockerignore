@@ -1,0 +1,17 @@
+# Docker
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+.gitignore
+README.md
+LICENSE
+.env
+
+# Build Context exclusion
+client/node_modules
+server/node_modules
+client/dist
+server/public/uploads/*
+server/public/generated/*

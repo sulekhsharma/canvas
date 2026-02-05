@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    container_name: gmb-qr-app
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - JWT_SECRET=${JWT_SECRET:-super-secret-production-key}
+      # If you have your own domain, update this if needed, though relative paths usually work
+      - VITE_API_BASE=/api
+    volumes:
+      # Persist SQLite Database
+      - ./server/database.db:/app/server/database.db
+      # Persist Uploads and Generated files
+      - ./server/public/uploads:/app/server/public/uploads
+      - ./server/public/generated:/app/server/public/generated
+
+  # Cloudflare Tunnel (Optional)
+  # Uncomment and add your token to .env to expose to the internet securely
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: gmb-qr-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      - app

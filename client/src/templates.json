@@ -1,0 +1,185 @@
+[
+    {
+        "id": "gmb_qr_minimal_premium_v2",
+        "name": "Minimal Premium Poster",
+        "description": "Clean, modern layout inspired by Balaji Electronics poster.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "top-logo",
+                "type": "logo",
+                "x": 1240,
+                "y": 450,
+                "maxWidth": 800,
+                "maxHeight": 450
+            },
+            {
+                "id": "stars",
+                "type": "star-rating",
+                "x": 1240,
+                "y": 850,
+                "size": 110,
+                "color": "#FFC107",
+                "count": 5
+            },
+            {
+                "id": "hook",
+                "type": "text",
+                "content": "Loved our service?",
+                "field": "hookText",
+                "x": 1240,
+                "y": 1050,
+                "fontSize": 140,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "500",
+                "align": "center",
+                "color": "#333333"
+            },
+            {
+                "id": "main-qr",
+                "type": "qr",
+                "x": 1240,
+                "y": 2000,
+                "size": 1300,
+                "errorCorrection": "H",
+                "includeLogo": true,
+                "logoPadding": 40,
+                "logoShape": "circle"
+            },
+            {
+                "id": "cta",
+                "type": "text",
+                "content": "Scan to leave a Google review",
+                "x": 1240,
+                "y": 2850,
+                "fontSize": 80,
+                "fontFamily": "Inter, sans-serif",
+                "align": "center",
+                "color": "#333333"
+            },
+            {
+                "id": "google-branding",
+                "type": "text",
+                "content": "Google Reviews",
+                "x": 1240,
+                "y": 3050,
+                "fontSize": 100,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "500",
+                "align": "center",
+                "color": "#5F6368"
+            },
+            {
+                "id": "divider",
+                "type": "decoration",
+                "x": 240,
+                "y": 3250,
+                "width": 2000,
+                "height": 4,
+                "color": "#e0e0e0"
+            }
+        ]
+    },
+    {
+        "id": "dental-special-v1",
+        "name": "Dental Clinic Style",
+        "description": "Inspired by modern clinic review posters with search bar branding.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "dental-logo",
+                "type": "logo",
+                "x": 1240,
+                "y": 450,
+                "maxWidth": 1000,
+                "maxHeight": 500
+            },
+            {
+                "id": "dental-thanks",
+                "type": "text",
+                "content": "thanks for your business!",
+                "field": "hookText",
+                "x": 1240,
+                "y": 850,
+                "fontSize": 140,
+                "fontFamily": "cursive, serif",
+                "align": "center",
+                "color": "#333333"
+            },
+            {
+                "id": "dental-impressed",
+                "type": "text",
+                "content": "Impressed with our services?",
+                "field": "ctaText",
+                "x": 1240,
+                "y": 1050,
+                "fontSize": 80,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#009DAE"
+            },
+            {
+                "id": "dental-qr",
+                "type": "qr",
+                "x": 1240,
+                "y": 1900,
+                "size": 1100,
+                "errorCorrection": "H"
+            },
+            {
+                "id": "search-bar-border",
+                "type": "decoration",
+                "x": 340,
+                "y": 2700,
+                "width": 1800,
+                "height": 180,
+                "color": "#ffffff",
+                "borderRadius": 90,
+                "borderWidth": 8,
+                "strokeColor": "#000000"
+            },
+            {
+                "id": "search-bar-text",
+                "type": "text",
+                "field": "businessName",
+                "content": "Your Business Name",
+                "x": 1240,
+                "y": 2795,
+                "fontSize": 85,
+                "fontFamily": "Inter, sans-serif",
+                "align": "center",
+                "color": "#333333"
+            },
+            {
+                "id": "footer-text",
+                "type": "text",
+                "content": "Give us a review",
+                "x": 800,
+                "y": 3150,
+                "fontSize": 100,
+                "fontFamily": "Georgia, serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#000000"
+            },
+            {
+                "id": "footer-stars",
+                "type": "star-rating",
+                "x": 1800,
+                "y": 3145,
+                "size": 100,
+                "color": "#F4C430",
+                "count": 5
+            }
+        ]
+    }
+]

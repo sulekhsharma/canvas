@@ -1,0 +1,127 @@
+{
+    "id": "portrait-minimal",
+    "name": "Portrait Minimal",
+    "orientation": "portrait",
+    "size": {
+        "width": 2480,
+        "height": 3508
+    },
+    "elements": [
+        {
+            "type": "text",
+            "id": "business-name",
+            "field": "businessName",
+            "x": 1240,
+            "y": 400,
+            "fontSize": 120,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#000000"
+        },
+        {
+            "type": "qr",
+            "id": "main-qr",
+            "x": 1240,
+            "y": 1500,
+            "size": 1200,
+            "logoSize": 300
+        },
+        {
+            "type": "text",
+            "id": "cta",
+            "field": "ctaText",
+            "x": 1240,
+            "y": 2500,
+            "fontSize": 100,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#333333"
+        },
+        {
+            "type": "icons",
+            "id": "stars",
+            "field": "showStars",
+            "x": 1240,
+            "y": 2650,
+            "size": 120,
+            "spacing": 20
+        },
+        {
+            "type": "text",
+            "id": "contact-info",
+            "field": "mobileNumber",
+            "x": 1240,
+            "y": 2850,
+            "fontSize": 70,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#333333"
+        },
+        {
+            "type": "text",
+            "id": "website",
+            "field": "websiteUrl",
+            "x": 1240,
+            "y": 2950,
+            "fontSize": 60,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#555555"
+        },
+        {
+            "type": "text",
+            "id": "address",
+            "field": "businessAddress",
+            "x": 1240,
+            "y": 3050,
+            "fontSize": 50,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#666666"
+        },
+        {
+            "type": "text",
+            "id": "socials",
+            "field": "facebookUrl",
+            "x": 1240,
+            "y": 3200,
+            "fontSize": 40,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#888888"
+        },
+        {
+            "type": "text",
+            "id": "email",
+            "field": "email",
+            "x": 1240,
+            "y": 3260,
+            "fontSize": 40,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#888888"
+        },
+        {
+            "type": "text",
+            "id": "whatsapp",
+            "field": "whatsappNumber",
+            "x": 1240,
+            "y": 3320,
+            "fontSize": 40,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#888888"
+        },
+        {
+            "type": "text",
+            "id": "instagram",
+            "field": "instagramUrl",
+            "x": 1240,
+            "y": 3380,
+            "fontSize": 40,
+            "fontFamily": "Arial",
+            "align": "center",
+            "color": "#888888"
+        }
+    ]
+}
