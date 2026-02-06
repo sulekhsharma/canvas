@@ -4,10 +4,10 @@
   "description": "GMB QR Code Design Generator",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=@gmb-qr/client\" \"npm run dev --workspace=@gmb-qr/server\"",
-    "build": "npm run build --workspace=@gmb-qr/client",
-    "start": "npm start --workspace=@gmb-qr/server",
-    "install:all": "npm install && npm install --workspace=@gmb-qr/client && npm install --workspace=@gmb-qr/server"
+    "dev": "concurrently \"npm run dev --workspace=@canvas/client\" \"npm run dev --workspace=@canvas/server\"",
+    "build": "npm run build --workspace=@canvas/client",
+    "start": "npm start --workspace=@canvas/server",
+    "install:all": "npm install && npm install --workspace=@canvas/client && npm install --workspace=@canvas/server"
   },
   "workspaces": [
     "client",

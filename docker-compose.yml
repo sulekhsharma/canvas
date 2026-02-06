@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    container_name: gmb-qr-app
+    container_name: canvas
     restart: always
     ports:
       - "5000:3000"

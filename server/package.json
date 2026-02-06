@@ -1,5 +1,5 @@
 {
-  "name": "@gmb-qr/server",
+  "name": "@canvas/server",
   "version": "1.0.0",
   "description": "GMB QR Code Generator Backend",
   "main": "src/index.js",

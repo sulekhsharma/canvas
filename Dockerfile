@@ -14,7 +14,7 @@ COPY . .
 
 # Build client
 ENV VITE_API_BASE=/api
-RUN npm run build --workspace=@gmb-qr/client
+RUN npm run build --workspace=@canvas/client
 
 # --- Stage 2: Production Server ---
 FROM node:20-bullseye-slim
