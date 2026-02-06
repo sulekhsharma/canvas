@@ -37,7 +37,7 @@ This project automates the creation of professional GMB review QR code designs. 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/sulekhsharma/online-gmb-qr.git
+   git clone https://github.com/sulekhsharma/canvas.git
    cd online-gmb-qr
    ```
 
@@ -83,4 +83,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-Built with ❤️ by [Your Name/Organization]
+Built with ❤️ by W3AXIS

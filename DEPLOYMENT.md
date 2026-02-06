@@ -21,7 +21,7 @@ SSH into your server and clone the repository:
 
 ```bash
 cd /var/www  # Or your preferred directory
-git clone https://github.com/sulekhsharma/online-gmb-qr.git
+git clone https://github.com/sulekhsharma/canvas.git
 cd online-gmb-qr
 ```
 

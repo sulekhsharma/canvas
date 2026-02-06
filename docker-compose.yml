@@ -10,18 +10,19 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - JWT_SECRET=${JWT_SECRET:-default_secret_please_change}
       - VITE_API_BASE=${VITE_API_BASE:-/api}
+      - DB_PATH=/app/server/data/database.db
     volumes:
-      # Database
-      - ./.site-db-and-uploads/canvas/database.db:/app/server/database.db
+      # Database folder (mounting folder prevents "file is directory" errors)
+      - ./.site-db-and-uploads/canvas:/app/server/data
       # Uploads
       - ./.site-db-and-uploads/canvas/uploads:/app/server/public/uploads
       # Generated Files
       - ./.site-db-and-uploads/canvas/generated:/app/server/public/generated
   # Cloudflare Tunnel
-  tunnel:
-    image: cloudflare/cloudflared:latest
-    container_name: n8n-auto-m8
-    restart: always
-    command: tunnel run
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: n8n-auto-m8
+  #   restart: always
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}
