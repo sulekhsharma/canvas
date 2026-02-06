@@ -17,11 +17,11 @@ services:
       - ./.site-db-and-uploads/canvas/uploads:/app/server/public/uploads
       # Generated Files
       - ./.site-db-and-uploads/canvas/generated:/app/server/public/generated
-  # Cloudflare Tunnel (Disabled for local)
-  # tunnel:
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: n8n-auto-m8
-  #   restart: always
-  #   command: tunnel run
-  #   environment:
-  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+  # Cloudflare Tunnel
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: n8n-auto-m8
+    restart: always
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
