@@ -4,27 +4,24 @@ services:
     container_name: gmb-qr-app
     restart: always
     ports:
-      - "5000:5000"
+      - "5000:3000"
     environment:
-      - PORT=5000
-      - JWT_SECRET=${JWT_SECRET:-super-secret-production-key}
-      # If you have your own domain, update this if needed, though relative paths usually work
-      - VITE_API_BASE=/api
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-production}
+      - JWT_SECRET=${JWT_SECRET:-default_secret_please_change}
+      - VITE_API_BASE=${VITE_API_BASE:-/api}
     volumes:
-      # Persist SQLite Database
-      - ./server/database.db:/app/server/database.db
-      # Persist Uploads and Generated files
-      - ./server/public/uploads:/app/server/public/uploads
-      - ./server/public/generated:/app/server/public/generated
-
-  # Cloudflare Tunnel (Optional)
-  # Uncomment and add your token to .env to expose to the internet securely
-  tunnel:
-    image: cloudflare/cloudflared:latest
-    container_name: gmb-qr-tunnel
-    restart: unless-stopped
-    command: tunnel run
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-    depends_on:
-      - app
+      # Database
+      - ./.site-db-and-uploads/canvas/database.db:/app/server/database.db
+      # Uploads
+      - ./.site-db-and-uploads/canvas/uploads:/app/server/public/uploads
+      # Generated Files
+      - ./.site-db-and-uploads/canvas/generated:/app/server/public/generated
+  # Cloudflare Tunnel (Disabled for local)
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: n8n-auto-m8
+  #   restart: always
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}

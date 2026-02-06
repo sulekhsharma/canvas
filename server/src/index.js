@@ -365,7 +365,8 @@ app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
 });
 
 // Serve React App for any other route
-app.get('*', (req, res) => {
+// Serve React App for any other route
+app.use((req, res) => {
     res.sendFile(join(__dirname, '../../client/dist/index.html'));
 });
 

@@ -4,7 +4,16 @@ import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.resolve(__dirname, '../database.db');
+
+// Use environment variable for DB path if provided (Docker friendly), otherwise default to local
+const dbPath = process.env.DB_PATH || path.resolve(__dirname, '../database.db');
+
+// Ensure directory exists
+import fs from 'fs';
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 const db = new Database(dbPath);
 
