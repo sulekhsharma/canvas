@@ -25,6 +25,10 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
 app.use(cors());
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
 app.use(express.json({ limit: '50mb' }));
 app.use('/public', express.static(join(__dirname, '../public')));
 app.use(express.static(join(__dirname, '../../client/dist')));
@@ -51,10 +55,16 @@ const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) return res.sendStatus(401);
+    if (!token) {
+        console.warn('Authentication failed: No token provided');
+        return res.sendStatus(401);
+    }
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
+        if (err) {
+            console.warn('Authentication failed: Invalid token');
+            return res.sendStatus(403);
+        }
         req.user = user;
         next();
     });
@@ -64,12 +74,15 @@ const authenticateToken = (req, res, next) => {
 
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
+    console.log(`Login attempt for: ${email}`);
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
 
     if (!user || !bcrypt.compareSync(password, user.password)) {
+        console.warn(`Login failed for ${email}: Invalid credentials`);
         return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log(`Login successful: ${email} (${user.role})`);
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name, role: user.role || 'user' }, JWT_SECRET);
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role || 'user' } });
 });
@@ -92,6 +105,7 @@ app.post('/api/auth/google', (req, res) => {
 // Admin Middleware
 const authenticateAdmin = (req, res, next) => {
     if (!req.user || req.user.role !== 'admin') {
+        console.warn(`Admin access denied for user: ${req.user ? req.user.email : 'unknown'} [Role: ${req.user ? req.user.role : 'none'}]`);
         return res.status(403).json({ error: 'Admin access required' });
     }
     next();
@@ -101,9 +115,12 @@ const authenticateAdmin = (req, res, next) => {
 
 app.get('/api/admin/users', authenticateToken, authenticateAdmin, (req, res) => {
     try {
+        console.log('Fetching all users for admin...');
         const users = db.prepare('SELECT id, email, name, role, created_at FROM users').all();
+        console.log(`Found ${users.length} users.`);
         res.json(users);
     } catch (error) {
+        console.error('Error fetching users:', error);
         res.status(500).json({ error: 'Failed to fetch users' });
     }
 });
@@ -111,25 +128,31 @@ app.get('/api/admin/users', authenticateToken, authenticateAdmin, (req, res) => 
 app.delete('/api/admin/users/:id', authenticateToken, authenticateAdmin, (req, res) => {
     try {
         const { id } = req.params;
+        console.log(`Admin deleting user: ${id}`);
         db.prepare('DELETE FROM designs WHERE user_id = ?').run(id);
         const result = db.prepare('DELETE FROM users WHERE id = ?').run(id);
         if (result.changes === 0) return res.status(404).json({ error: 'User not found' });
+        console.log(`User ${id} deleted successfully.`);
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
+        console.error('Error deleting user:', error);
         res.status(500).json({ error: 'Failed to delete user' });
     }
 });
 
 app.get('/api/admin/designs', authenticateToken, authenticateAdmin, (req, res) => {
     try {
+        console.log('Fetching all designs for admin...');
         const designs = db.prepare(`
             SELECT d.*, u.email as user_email 
             FROM designs d 
             JOIN users u ON d.user_id = u.id 
             ORDER BY d.updated_at DESC
         `).all();
+        console.log(`Found ${designs.length} designs.`);
         res.json(designs.map(d => ({ ...d, data: JSON.parse(d.data) })));
     } catch (error) {
+        console.error('Error fetching designs:', error);
         res.status(500).json({ error: 'Failed to fetch designs' });
     }
 });
