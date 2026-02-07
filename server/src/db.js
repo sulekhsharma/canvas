@@ -55,7 +55,7 @@ export function syncDatabase() {
 
     const hasCreatedAt = userTableInfo.some(col => col.name === 'created_at');
     if (!hasCreatedAt) {
-      db.prepare("ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+      db.prepare("ALTER TABLE users ADD COLUMN created_at DATETIME").run();
       console.log('Added created_at column to users table');
     }
 
@@ -64,13 +64,13 @@ export function syncDatabase() {
 
     const hasDesignCreatedAt = designTableInfo.some(col => col.name === 'created_at');
     if (!hasDesignCreatedAt) {
-      db.prepare("ALTER TABLE designs ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+      db.prepare("ALTER TABLE designs ADD COLUMN created_at DATETIME").run();
       console.log('Added created_at column to designs table');
     }
 
     const hasDesignUpdatedAt = designTableInfo.some(col => col.name === 'updated_at');
     if (!hasDesignUpdatedAt) {
-      db.prepare("ALTER TABLE designs ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+      db.prepare("ALTER TABLE designs ADD COLUMN updated_at DATETIME").run();
       console.log('Added updated_at column to designs table');
     }
 
