@@ -55,16 +55,20 @@ const demoPassword = bcrypt.hashSync('demo123', 10);
 const adminPassword = bcrypt.hashSync('admin123', 10);
 
 // Ensure Admin User Exists with Correct Role/Password
-const upsertAdmin = db.prepare(`
-    INSERT INTO users (id, email, password, name, role) 
-    VALUES (?, ?, ?, ?, ?) 
-    ON CONFLICT(id) DO UPDATE SET 
-        password = excluded.password,
-        role = excluded.role,
-        name = excluded.name
-`);
+const adminEmail = 'admin@example.com';
+const existingAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
 
-upsertAdmin.run('admin-user', 'admin@example.com', adminPassword, 'Super Admin', 'admin');
+if (existingAdmin) {
+  // User exists (possibly from manual sign up), FORCE update their role and password
+  db.prepare('UPDATE users SET password = ?, role = ?, name = ? WHERE email = ?')
+    .run(adminPassword, 'admin', 'Super Admin', adminEmail);
+  console.log('Admin account updated.');
+} else {
+  // User does not exist, insert fresh
+  db.prepare('INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)')
+    .run('admin-user', adminEmail, adminPassword, 'Super Admin', 'admin');
+  console.log('Admin account created.');
+}
 
 // Demo users (keep as ignore to not overwrite user changes)
 const insertUser = db.prepare('INSERT OR IGNORE INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)');
