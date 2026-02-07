@@ -3,8 +3,9 @@ import './index.css'
 import { DesignBuilder } from './DesignBuilder'
 import { templates } from './templates'
 import { LoginPage } from './LoginPage'
+import { AdminPanel } from './AdminPanel'
 import type { DesignTemplate, User, DesignData } from './types'
-import { LogOut, Plus, Clock, LayoutGrid } from 'lucide-react'
+import { LogOut, Plus, Clock, LayoutGrid, ShieldCheck } from 'lucide-react'
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
@@ -13,9 +14,15 @@ function App() {
   const [myDesigns, setMyDesigns] = useState<any[]>([])
   const [editingDesign, setEditingDesign] = useState<DesignData | null>(null)
   const [view, setView] = useState<'selection' | 'history'>('selection')
+  const [showAdmin, setShowAdmin] = useState(false)
 
   useEffect(() => {
     if (token) {
+      // Refresh user data from local storage to ensure role updates are caught if re-logging
+      const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+      if (storedUser && storedUser.role !== user?.role) {
+        setUser(storedUser);
+      }
       fetchDesigns()
     }
   }, [token])
@@ -47,6 +54,7 @@ function App() {
     localStorage.removeItem('user')
     setSelectedTemplate(null)
     setEditingDesign(null)
+    setShowAdmin(false)
   }
 
   const startEditing = (design: any) => {
@@ -57,6 +65,10 @@ function App() {
 
   if (!token) {
     return <LoginPage onLogin={handleLogin} />
+  }
+
+  if (showAdmin && user?.role === 'admin') {
+    return <AdminPanel token={token} onClose={() => setShowAdmin(false)} />
   }
 
   if (selectedTemplate) {
@@ -75,6 +87,15 @@ function App() {
       <nav className="top-nav">
         <div className="nav-brand">GMB QR Generator</div>
         <div className="nav-actions">
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => setShowAdmin(true)}
+              className={showAdmin ? 'active admin-btn' : 'admin-btn'}
+              style={{ color: '#dc2626', background: '#fef2f2' }}
+            >
+              <ShieldCheck size={18} /> Admin
+            </button>
+          )}
           <button onClick={() => setView('selection')} className={view === 'selection' ? 'active' : ''}>
             <Plus size={18} /> New Design
           </button>

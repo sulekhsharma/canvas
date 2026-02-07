@@ -104,6 +104,7 @@ export const LoginPage = ({ onLogin }: LoginPageProps) => {
                     </button>
 
                     <div className="demo-hint">
+                        <p><strong>Admin Account:</strong> admin@example.com / admin123</p>
                         <p><strong>Demo Account:</strong> demo1@example.com / demo123</p>
                         <p><strong>Demo Account 2:</strong> demo2@example.com / demo123</p>
                     </div>

@@ -70,8 +70,8 @@ app.post('/api/auth/login', (req, res) => {
         return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET);
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name, role: user.role || 'user' }, JWT_SECRET);
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role || 'user' } });
 });
 
 app.post('/api/auth/google', (req, res) => {
@@ -85,8 +85,53 @@ app.post('/api/auth/google', (req, res) => {
         user = { id, email, name };
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET);
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name, role: user.role || 'user' }, JWT_SECRET);
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role || 'user' } });
+});
+
+// Admin Middleware
+const authenticateAdmin = (req, res, next) => {
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+};
+
+// --- ADMIN ROUTES ---
+
+app.get('/api/admin/users', authenticateToken, authenticateAdmin, (req, res) => {
+    try {
+        const users = db.prepare('SELECT id, email, name, role, created_at FROM users').all();
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+app.delete('/api/admin/users/:id', authenticateToken, authenticateAdmin, (req, res) => {
+    try {
+        const { id } = req.params;
+        db.prepare('DELETE FROM designs WHERE user_id = ?').run(id);
+        const result = db.prepare('DELETE FROM users WHERE id = ?').run(id);
+        if (result.changes === 0) return res.status(404).json({ error: 'User not found' });
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete user' });
+    }
+});
+
+app.get('/api/admin/designs', authenticateToken, authenticateAdmin, (req, res) => {
+    try {
+        const designs = db.prepare(`
+            SELECT d.*, u.email as user_email 
+            FROM designs d 
+            JOIN users u ON d.user_id = u.id 
+            ORDER BY d.updated_at DESC
+        `).all();
+        res.json(designs.map(d => ({ ...d, data: JSON.parse(d.data) })));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch designs' });
+    }
 });
 
 // --- DESIGN MANAGEMENT ---

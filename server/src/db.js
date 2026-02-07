@@ -24,7 +24,8 @@ db.exec(`
     email TEXT UNIQUE,
     password TEXT,
     name TEXT,
-    google_id TEXT UNIQUE
+    google_id TEXT UNIQUE,
+    role TEXT DEFAULT 'user'
   );
 
   CREATE TABLE IF NOT EXISTS designs (
@@ -38,12 +39,25 @@ db.exec(`
   );
 `);
 
+// Add role column if it doesn't exist (Migration)
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+  const hasRole = tableInfo.some(col => col.name === 'role');
+  if (!hasRole) {
+    db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run();
+  }
+} catch (error) {
+  console.error("Migration Error:", error);
+}
+
 // Create demo accounts if they don't exist
 const demoPassword = bcrypt.hashSync('demo123', 10);
+const adminPassword = bcrypt.hashSync('admin123', 10);
 
-const insertUser = db.prepare('INSERT OR IGNORE INTO users (id, email, password, name) VALUES (?, ?, ?, ?)');
+const insertUser = db.prepare('INSERT OR IGNORE INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)');
 
-insertUser.run('demo-user-1', 'demo1@example.com', demoPassword, 'Demo User One');
-insertUser.run('demo-user-2', 'demo2@example.com', demoPassword, 'Demo User Two');
+insertUser.run('admin-user', 'admin@example.com', adminPassword, 'Super Admin', 'admin');
+insertUser.run('demo-user-1', 'demo1@example.com', demoPassword, 'Demo User One', 'user');
+insertUser.run('demo-user-2', 'demo2@example.com', demoPassword, 'Demo User Two', 'user');
 
 export default db;
