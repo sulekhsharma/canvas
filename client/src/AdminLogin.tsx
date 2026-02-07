@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
-import { AdminPanel } from './AdminPanel';
 
 interface AdminLoginProps {
     onBack: () => void;
@@ -13,7 +12,6 @@ export const AdminLogin = ({ onBack, onLoginSuccess }: AdminLoginProps) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [token, setToken] = useState('');
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -32,7 +30,6 @@ export const AdminLogin = ({ onBack, onLoginSuccess }: AdminLoginProps) => {
                 if (data.user.role !== 'admin') {
                     setError('Access Denied: This account does not have admin privileges.');
                 } else {
-                    setToken(data.token);
                     setIsLoggedIn(true);
                     onLoginSuccess(data.token, data.user);
                 }
