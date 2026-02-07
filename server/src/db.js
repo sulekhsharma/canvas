@@ -40,22 +40,50 @@ db.exec(`
   );
 `);
 
-// Add role & created_at column if it doesn't exist (Migration)
-try {
-  const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+// Migration function to ensure schema is up to date
+export function syncDatabase() {
+  console.log('Syncing database schema...');
+  try {
+    // Users table migrations
+    const userTableInfo = db.prepare("PRAGMA table_info(users)").all();
 
-  const hasRole = tableInfo.some(col => col.name === 'role');
-  if (!hasRole) {
-    db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run();
-  }
+    const hasRole = userTableInfo.some(col => col.name === 'role');
+    if (!hasRole) {
+      db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run();
+      console.log('Added role column to users table');
+    }
 
-  const hasCreatedAt = tableInfo.some(col => col.name === 'created_at');
-  if (!hasCreatedAt) {
-    db.prepare("ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+    const hasCreatedAt = userTableInfo.some(col => col.name === 'created_at');
+    if (!hasCreatedAt) {
+      db.prepare("ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+      console.log('Added created_at column to users table');
+    }
+
+    // Designs table migrations
+    const designTableInfo = db.prepare("PRAGMA table_info(designs)").all();
+
+    const hasDesignCreatedAt = designTableInfo.some(col => col.name === 'created_at');
+    if (!hasDesignCreatedAt) {
+      db.prepare("ALTER TABLE designs ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+      console.log('Added created_at column to designs table');
+    }
+
+    const hasDesignUpdatedAt = designTableInfo.some(col => col.name === 'updated_at');
+    if (!hasDesignUpdatedAt) {
+      db.prepare("ALTER TABLE designs ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+      console.log('Added updated_at column to designs table');
+    }
+
+    console.log('Database schema sync complete.');
+    return { success: true, message: 'Database synced successfully' };
+  } catch (error) {
+    console.error("Migration Error:", error);
+    throw error;
   }
-} catch (error) {
-  console.error("Migration Error:", error);
 }
+
+// Initial sync on startup
+syncDatabase();
 
 // Create demo accounts if they don't exist
 const demoPassword = bcrypt.hashSync('demo123', 10);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Users, Layout, RefreshCw } from 'lucide-react';
+import { Trash2, Users, Layout, RefreshCw, Database } from 'lucide-react';
 import type { User, DesignData } from './types';
 
 interface AdminPanelProps {
@@ -25,6 +25,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [designs, setDesigns] = useState<AdminDesign[]>([]);
     const [loading, setLoading] = useState(false);
+    const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const apiBase = import.meta.env.VITE_API_BASE || '/api';
@@ -59,6 +60,28 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
         }
     };
 
+    const handleSync = async () => {
+        setSyncing(true);
+        setError(null);
+        try {
+            const res = await fetch(`${apiBase}/admin/sync`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message || 'Database synced successfully');
+                fetchData();
+            } else {
+                throw new Error(data.error || 'Sync failed');
+            }
+        } catch (err: any) {
+            alert('Error: ' + err.message);
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     const handleDeleteUser = async (id: string) => {
         if (!confirm('Are you sure you want to delete this user and all their designs?')) return;
 
@@ -82,7 +105,15 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
             <header className="admin-header">
                 <h2>Admin Dashboard</h2>
                 <div className="admin-actions">
-                    <button onClick={fetchData} title="Refresh"><RefreshCw size={18} /></button>
+                    <button
+                        onClick={handleSync}
+                        disabled={syncing}
+                        className="sync-btn"
+                        title="Force Database Schema Sync"
+                    >
+                        <Database size={18} /> {syncing ? 'Syncing...' : 'Sync DB'}
+                    </button>
+                    <button onClick={fetchData} title="Refresh Data"><RefreshCw size={18} /></button>
                     <button onClick={onClose} className="close-btn">Exit Admin</button>
                 </div>
             </header>
@@ -183,6 +214,31 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 }
                 .admin-header h2 { margin: 0; color: #1e293b; }
                 .admin-actions { display: flex; gap: 1rem; }
+                .sync-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.5rem 1rem;
+                    background: #6366f1;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: background 0.2s;
+                }
+                .sync-btn:hover { background: #4f46e5; }
+                .sync-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+                
+                .admin-actions button[title="Refresh Data"] {
+                    background: #f1f5f9;
+                    border: 1px solid #e2e8f0;
+                    padding: 0.5rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    color: #64748b;
+                }
+
                 .close-btn {
                     padding: 0.5rem 1rem;
                     background: #ef4444;

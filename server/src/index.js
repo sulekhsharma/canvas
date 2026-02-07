@@ -7,7 +7,7 @@ import { PDFDocument } from 'pdf-lib';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import db from './db.js';
+import db, { syncDatabase } from './db.js';
 import multer from 'multer';
 import fs from 'fs';
 import path, { dirname, join } from 'path';
@@ -154,6 +154,17 @@ app.get('/api/admin/designs', authenticateToken, authenticateAdmin, (req, res) =
     } catch (error) {
         console.error('Error fetching designs:', error);
         res.status(500).json({ error: 'Failed to fetch designs' });
+    }
+});
+
+app.post('/api/admin/sync', authenticateToken, authenticateAdmin, (req, res) => {
+    try {
+        console.log('Manual database sync requested...');
+        const result = syncDatabase();
+        res.json(result);
+    } catch (error) {
+        console.error('Manual sync failed:', error);
+        res.status(500).json({ error: 'Database sync failed' });
     }
 });
 
