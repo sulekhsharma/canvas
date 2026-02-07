@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X } from 'lucide-react';
-import type { User, DesignData, DesignTemplate } from './types';
+import type { User, DesignData } from './types';
 
 interface AdminPanelProps {
     token: string;
