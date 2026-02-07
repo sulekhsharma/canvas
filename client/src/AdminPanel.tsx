@@ -137,7 +137,11 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 {loading && <div className="loading">Loading data...</div>}
                 {error && <div className="error">{error}</div>}
 
-                {!loading && !error && view === 'users' && (
+                {!loading && !error && view === 'users' && users.length === 0 && (
+                    <div className="empty-admin-state">No users found in the database.</div>
+                )}
+
+                {!loading && !error && view === 'users' && users.length > 0 && (
                     <div className="table-responsive">
                         <table className="admin-table">
                             <thead>
@@ -159,7 +163,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                                                 {user.role || 'user'}
                                             </span>
                                         </td>
-                                        <td>{new Date(user.created_at || Date.now()).toLocaleDateString()}</td>
+                                        <td>{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
                                         <td>
                                             {user.role !== 'admin' && (
                                                 <button
@@ -178,17 +182,21 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     </div>
                 )}
 
-                {!loading && !error && view === 'designs' && (
+                {!loading && !error && view === 'designs' && designs.length === 0 && (
+                    <div className="empty-admin-state">No designs have been created yet.</div>
+                )}
+
+                {!loading && !error && view === 'designs' && designs.length > 0 && (
                     <div className="designs-grid-admin">
                         {designs.map(design => (
                             <div key={design.id} className="design-card-mini">
                                 <div className="design-header">
-                                    <span className="user-email">{design.user_email}</span>
+                                    <span className="user-email">{design.user_email || 'Deleted User'}</span>
                                     <span className="template-name">{design.template_id}</span>
                                 </div>
                                 <div className="design-body">
                                     <h4>{design.data.businessName || 'Untitled'}</h4>
-                                    <p>Updated: {new Date(design.updated_at).toLocaleDateString()}</p>
+                                    <p>Updated: {design.updated_at ? new Date(design.updated_at).toLocaleDateString() : 'N/A'}</p>
                                 </div>
                             </div>
                         ))}
@@ -334,6 +342,16 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 .user-email { font-weight: 500; color: #2563eb; }
                 .design-body h4 { margin: 0 0 0.25rem 0; font-size: 1rem; }
                 .design-body p { margin: 0; font-size: 0.8rem; color: #94a3b8; }
+
+                .empty-admin-state {
+                    text-align: center;
+                    padding: 4rem;
+                    background: white;
+                    border-radius: 12px;
+                    border: 2px dashed #e2e8f0;
+                    color: #64748b;
+                    font-size: 1.1rem;
+                }
             `}</style>
         </div>
     );

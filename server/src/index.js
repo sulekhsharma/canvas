@@ -146,11 +146,21 @@ app.get('/api/admin/designs', authenticateToken, authenticateAdmin, (req, res) =
         const designs = db.prepare(`
             SELECT d.*, u.email as user_email 
             FROM designs d 
-            JOIN users u ON d.user_id = u.id 
+            LEFT JOIN users u ON d.user_id = u.id 
             ORDER BY d.updated_at DESC
         `).all();
-        console.log(`Found ${designs.length} designs.`);
-        res.json(designs.map(d => ({ ...d, data: JSON.parse(d.data) })));
+        console.log(`Found ${designs.length} designs in database.`);
+
+        const simplifiedDesigns = designs.map(d => {
+            try {
+                return { ...d, data: d.data ? JSON.parse(d.data) : {} };
+            } catch (e) {
+                console.error(`Malformed JSON for design ${d.id}:`, d.data);
+                return { ...d, data: { businessName: 'Data Corrupted' } };
+            }
+        });
+
+        res.json(simplifiedDesigns);
     } catch (error) {
         console.error('Error fetching designs:', error);
         res.status(500).json({ error: 'Failed to fetch designs' });
