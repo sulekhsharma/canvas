@@ -54,9 +54,20 @@ try {
 const demoPassword = bcrypt.hashSync('demo123', 10);
 const adminPassword = bcrypt.hashSync('admin123', 10);
 
-const insertUser = db.prepare('INSERT OR IGNORE INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)');
+// Ensure Admin User Exists with Correct Role/Password
+const upsertAdmin = db.prepare(`
+    INSERT INTO users (id, email, password, name, role) 
+    VALUES (?, ?, ?, ?, ?) 
+    ON CONFLICT(id) DO UPDATE SET 
+        password = excluded.password,
+        role = excluded.role,
+        name = excluded.name
+`);
 
-insertUser.run('admin-user', 'admin@example.com', adminPassword, 'Super Admin', 'admin');
+upsertAdmin.run('admin-user', 'admin@example.com', adminPassword, 'Super Admin', 'admin');
+
+// Demo users (keep as ignore to not overwrite user changes)
+const insertUser = db.prepare('INSERT OR IGNORE INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)');
 insertUser.run('demo-user-1', 'demo1@example.com', demoPassword, 'Demo User One', 'user');
 insertUser.run('demo-user-2', 'demo2@example.com', demoPassword, 'Demo User Two', 'user');
 
