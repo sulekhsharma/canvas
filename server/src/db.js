@@ -95,17 +95,46 @@ export function syncDatabase() {
       console.log('Added updated_at column to designs table');
     }
 
+    // Ensure templates and api_logs tables exist
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS templates (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        description TEXT,
+        data TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS api_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        method TEXT,
+        url TEXT,
+        user_email TEXT,
+        status_code INTEGER,
+        duration INTEGER,
+        ip TEXT,
+        user_agent TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Seed Templates if empty
     const templateCount = db.prepare('SELECT COUNT(*) as count FROM templates').get().count;
     if (templateCount === 0) {
       console.log('Seeding default templates...');
       try {
-        const templatesData = JSON.parse(fs.readFileSync(path.join(__dirname, '../../client/src/templates.json'), 'utf8'));
-        const stmt = db.prepare('INSERT INTO templates (id, name, description, data) VALUES (?, ?, ?, ?)');
-        for (const t of templatesData) {
-          stmt.run(t.id, t.name, t.description, JSON.stringify(t));
+        const templatesPath = path.join(__dirname, '../../client/src/templates.json');
+        if (fs.existsSync(templatesPath)) {
+          const templatesData = JSON.parse(fs.readFileSync(templatesPath, 'utf8'));
+          const stmt = db.prepare('INSERT INTO templates (id, name, description, data) VALUES (?, ?, ?, ?)');
+          for (const t of templatesData) {
+            stmt.run(t.id, t.name, t.description, JSON.stringify(t));
+          }
+          console.log(`Seeded ${templatesData.length} templates.`);
+        } else {
+          console.warn('templates.json not found at', templatesPath);
         }
-        console.log(`Seeded ${templatesData.length} templates.`);
       } catch (e) {
         console.error('Failed to seed templates:', e);
       }
