@@ -61,7 +61,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Configure Multer
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, join(__dirname, '../public/uploads/'));
+        const dir = join(__dirname, '../public/uploads/');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -70,6 +72,23 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+
+const templateStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dir = join(__dirname, '../public/uploads/templates/');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname) || '.png';
+        cb(null, 'template-' + uniqueSuffix + ext);
+    }
+});
+const templateUpload = multer({
+    storage: templateStorage,
+    limits: { fileSize: 1024 * 1024 } // 1MB limit
+});
 
 // Auth Middleware
 const authenticateToken = (req, res, next) => {
@@ -137,7 +156,10 @@ const authenticateAdmin = (req, res, next) => {
 app.get('/api/templates', (req, res) => {
     try {
         const templates = db.prepare('SELECT * FROM templates WHERE is_active = 1').all();
-        res.json(templates.map(t => JSON.parse(t.data)));
+        res.json(templates.map(t => ({
+            ...JSON.parse(t.data),
+            image_url: t.image_url
+        })));
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch templates' });
     }
@@ -220,25 +242,38 @@ app.get('/api/admin/templates', authenticateToken, authenticateAdmin, (req, res)
     }
 });
 
-app.post('/api/admin/templates', authenticateToken, authenticateAdmin, (req, res) => {
-    const { id, name, description, data } = req.body;
+app.post('/api/admin/templates', authenticateToken, authenticateAdmin, templateUpload.single('image'), (req, res) => {
+    let { id, name, description, data } = req.body;
     try {
-        db.prepare('INSERT INTO templates (id, name, description, data) VALUES (?, ?, ?, ?)')
-            .run(id || uuidv4(), name, description, JSON.stringify(data));
+        if (typeof data === 'string') data = JSON.parse(data);
+        const imageUrl = req.file ? `/public/uploads/templates/${req.file.filename}` : null;
+
+        db.prepare('INSERT INTO templates (id, name, description, data, image_url) VALUES (?, ?, ?, ?, ?)')
+            .run(id || uuidv4(), name, description, JSON.stringify(data), imageUrl);
         res.json({ message: 'Template created successfully' });
     } catch (e) {
+        console.error('Failed to create template:', e);
         res.status(500).json({ error: 'Failed to create template' });
     }
 });
 
-app.put('/api/admin/templates/:id', authenticateToken, authenticateAdmin, (req, res) => {
+app.put('/api/admin/templates/:id', authenticateToken, authenticateAdmin, templateUpload.single('image'), (req, res) => {
     const { id } = req.params;
-    const { name, description, data, is_active } = req.body;
+    let { name, description, data, is_active } = req.body;
     try {
-        db.prepare('UPDATE templates SET name = ?, description = ?, data = ?, is_active = ? WHERE id = ?')
-            .run(name, description, JSON.stringify(data), is_active ? 1 : 0, id);
+        if (typeof data === 'string') data = JSON.parse(data);
+        const imageUrl = req.file ? `/public/uploads/templates/${req.file.filename}` : null;
+
+        if (imageUrl) {
+            db.prepare('UPDATE templates SET name = ?, description = ?, data = ?, is_active = ?, image_url = ? WHERE id = ?')
+                .run(name, description, JSON.stringify(data), is_active === 'true' || is_active === 1 ? 1 : 0, imageUrl, id);
+        } else {
+            db.prepare('UPDATE templates SET name = ?, description = ?, data = ?, is_active = ? WHERE id = ?')
+                .run(name, description, JSON.stringify(data), is_active === 'true' || is_active === 1 ? 1 : 0, id);
+        }
         res.json({ message: 'Template updated successfully' });
     } catch (e) {
+        console.error('Failed to update template:', e);
         res.status(500).json({ error: 'Failed to update template' });
     }
 });

@@ -1,0 +1,93 @@
+{
+    "info": {
+        "_postman_id": "b3e0e7a1-2c1b-4b14-8c1a-9d9f9c9e9b9e",
+        "name": "Canvas Auto-M8 QR API",
+        "description": "Collection for checking QR generation endpoints on canvas.auto-m8.pro",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Generate QR (Form Data)",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "gmbUrl",
+                            "value": "https://maps.app.goo.gl/example",
+                            "description": "Required: The Google Maps URL",
+                            "type": "text"
+                        },
+                        {
+                            "key": "primaryColor",
+                            "value": "#6366f1",
+                            "description": "Primary brand color (Hex)",
+                            "type": "text"
+                        },
+                        {
+                            "key": "businessAddress",
+                            "value": "123 Innovation Dr, Tech City",
+                            "type": "text"
+                        },
+                        {
+                            "key": "mobileNumber",
+                            "value": "+1 555 123 4567",
+                            "type": "text"
+                        },
+                        {
+                            "key": "logo",
+                            "description": "Upload a logo file here",
+                            "type": "file"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/generate-qr",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "generate-qr"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Generate QR (JSON)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"gmbUrl\": \"https://maps.app.goo.gl/exampleJSON\",\n    \"primaryColor\": \"#10b981\",\n    \"secondaryColor\": \"#3b82f6\",\n    \"businessAddress\": \"456 Digital Ave\",\n    \"email\": \"contact@example.com\",\n    \"websiteUrl\": \"https://example.com\",\n    \"template\": {\n        \"dimensions\": {\n            \"width\": 1000,\n            \"height\": 1000\n        },\n        \"elements\": [\n            {\n                \"type\": \"qr\",\n                \"x\": 500,\n                \"y\": 500,\n                \"size\": 600\n            }\n        ]\n    }\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/generate-qr",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "generate-qr"
+                    ]
+                }
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "https://canvas.auto-m8.pro/api",
+            "type": "string"
+        }
+    ]
+}

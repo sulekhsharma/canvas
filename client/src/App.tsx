@@ -173,7 +173,15 @@ function App() {
               {dynamicTemplates.map(template => (
                 <div key={template.id} className="template-card" onClick={() => setSelectedTemplate(template)}>
                   <div className={`preview-placeholder ${template.orientation}`}>
-                    {template.orientation === 'portrait' ? <LayoutGrid /> : <LayoutGrid style={{ transform: 'rotate(90deg)' }} />}
+                    {template.image_url ? (
+                      <img
+                        src={`${apiBase.replace('/api', '')}${template.image_url}`}
+                        alt={template.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      template.orientation === 'portrait' ? <LayoutGrid /> : <LayoutGrid style={{ transform: 'rotate(90deg)' }} />
+                    )}
                   </div>
                   <h3>{template.name}</h3>
                   <p>{template.description}</p>

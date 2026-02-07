@@ -119,19 +119,19 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
         }
     };
 
-    const handleSaveTemplate = async (template: any) => {
+    const handleSaveTemplate = async (templateData: FormData) => {
         try {
-            const isUpdate = !!template.id && templates.some(t => t.id === template.id);
-            const url = isUpdate ? `${apiBase}/admin/templates/${template.id}` : `${apiBase}/admin/templates`;
+            const id = templateData.get('id');
+            const isUpdate = !!id && templates.some(t => t.id === id);
+            const url = isUpdate ? `${apiBase}/admin/templates/${id}` : `${apiBase}/admin/templates`;
             const method = isUpdate ? 'PUT' : 'POST';
 
             const res = await fetch(url, {
                 method,
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(template)
+                body: templateData
             });
 
             if (res.ok) {
@@ -288,6 +288,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                             <table className="admin-table">
                                 <thead>
                                     <tr>
+                                        <th>Image</th>
                                         <th>Name</th>
                                         <th>ID</th>
                                         <th>Active</th>
@@ -297,6 +298,13 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                                 <tbody>
                                     {templates.map(t => (
                                         <tr key={t.id}>
+                                            <td>
+                                                {t.image_url ? (
+                                                    <img src={`${apiBase.replace('/api', '')}${t.image_url}`} alt={t.name} className="template-thumb-mini" />
+                                                ) : (
+                                                    <div className="template-thumb-mini placeholder">No Img</div>
+                                                )}
+                                            </td>
                                             <td>{t.name}</td>
                                             <td><code>{t.id}</code></td>
                                             <td>{t.is_active ? '✅' : '❌'}</td>
@@ -537,12 +545,44 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; }
                 .save-btn { padding: 0.75rem 2rem; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
                 .cancel-btn { padding: 0.75rem 2rem; background: #f1f5f9; color: #64748b; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+                .template-thumb-mini {
+                    width: 40px;
+                    height: 56px;
+                    object-fit: cover;
+                    border-radius: 4px;
+                    background: #f1f5f9;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.6rem;
+                    color: #94a3b8;
+                    border: 1px solid #e2e8f0;
+                }
+                .template-thumb-mini.placeholder { font-size: 0.5rem; text-align: center; }
+
+                .image-upload-preview {
+                    width: 100%;
+                    height: 120px;
+                    border: 2px dashed #e2e8f0;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    overflow: hidden;
+                    margin-top: 0.5rem;
+                }
+                .image-upload-preview img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                }
             `}</style>
         </div>
     );
 }
 
-function TemplateModal({ template, onClose, onSave }: { template: any, onClose: () => void, onSave: (t: any) => void }) {
+function TemplateModal({ template, onClose, onSave }: { template: any, onClose: () => void, onSave: (t: FormData) => void }) {
     const [formData, setFormData] = useState({
         id: template?.id || '',
         name: template?.name || '',
@@ -550,15 +590,39 @@ function TemplateModal({ template, onClose, onSave }: { template: any, onClose: 
         data: template ? JSON.stringify(template.data, null, 2) : '',
         is_active: template?.is_active !== undefined ? template.is_active : true
     });
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(template?.image_url ? `/public/uploads/templates/${template.image_url.split('/').pop()}` : null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 1024 * 1024) {
+                alert('File size must be less than 1MB');
+                return;
+            }
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const parsedData = JSON.parse(formData.data);
-            onSave({
-                ...formData,
-                data: parsedData
-            });
+            const data = new FormData();
+            data.append('id', formData.id);
+            data.append('name', formData.name);
+            data.append('description', formData.description);
+            data.append('data', JSON.stringify(parsedData));
+            data.append('is_active', String(formData.is_active));
+            if (selectedFile) {
+                data.append('image', selectedFile);
+            }
+            onSave(data);
         } catch (err) {
             alert('Invalid JSON in template data');
         }
@@ -591,13 +655,28 @@ function TemplateModal({ template, onClose, onSave }: { template: any, onClose: 
                             />
                         </div>
                     </div>
-                    <div className="form-group">
-                        <label>Description</label>
-                        <input
-                            value={formData.description}
-                            onChange={e => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Standard portrait business card setup"
-                        />
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Description</label>
+                            <input
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                placeholder="Standard portrait business card setup"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Template Image (PNG/JPG, max 1MB)</label>
+                            <input
+                                type="file"
+                                accept="image/png, image/jpeg"
+                                onChange={handleFileChange}
+                            />
+                            {previewUrl && (
+                                <div className="image-upload-preview">
+                                    <img src={previewUrl.startsWith('data:') ? previewUrl : `${window.location.protocol}//${window.location.host}${previewUrl}`} alt="Preview" />
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div className="form-group">
                         <label>Template Configuration (JSON Elements)</label>

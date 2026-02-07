@@ -84,6 +84,7 @@ export interface DesignTemplate {
     };
     elements: DesignElement[];
     background?: string;
+    image_url?: string;
 }
 
 export interface DesignData {

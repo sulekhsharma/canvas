@@ -44,6 +44,7 @@ db.exec(`
     name TEXT,
     description TEXT,
     data TEXT, -- JSON structure of the template
+    image_url TEXT,
     is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -93,6 +94,14 @@ export function syncDatabase() {
     if (!hasDesignUpdatedAt) {
       db.prepare("ALTER TABLE designs ADD COLUMN updated_at DATETIME").run();
       console.log('Added updated_at column to designs table');
+    }
+
+    // Templates table migrations
+    const templateTableInfo = db.prepare("PRAGMA table_info(templates)").all();
+    const hasImageUrl = templateTableInfo.some(col => col.name === 'image_url');
+    if (!hasImageUrl && templateTableInfo.length > 0) {
+      db.prepare("ALTER TABLE templates ADD COLUMN image_url TEXT").run();
+      console.log('Added image_url column to templates table');
     }
 
     // Ensure templates and api_logs tables exist
