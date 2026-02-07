@@ -25,7 +25,8 @@ db.exec(`
     password TEXT,
     name TEXT,
     google_id TEXT UNIQUE,
-    role TEXT DEFAULT 'user'
+    role TEXT DEFAULT 'user',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS designs (
@@ -39,12 +40,18 @@ db.exec(`
   );
 `);
 
-// Add role column if it doesn't exist (Migration)
+// Add role & created_at column if it doesn't exist (Migration)
 try {
   const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+
   const hasRole = tableInfo.some(col => col.name === 'role');
   if (!hasRole) {
     db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run();
+  }
+
+  const hasCreatedAt = tableInfo.some(col => col.name === 'created_at');
+  if (!hasCreatedAt) {
+    db.prepare("ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
   }
 } catch (error) {
   console.error("Migration Error:", error);
