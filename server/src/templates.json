@@ -439,5 +439,373 @@
                 "color": "#5f6368"
             }
         ]
+    },
+    {
+        "id": "royal-gold-premium",
+        "name": "Royal Gold Elite",
+        "description": "Luxurious deep navy and gold theme for high-end establishments.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "bg",
+                "type": "decoration",
+                "x": 0,
+                "y": 0,
+                "width": 2480,
+                "height": 3508,
+                "color": "#0A192F"
+            },
+            {
+                "id": "gold-line-top",
+                "type": "decoration",
+                "x": 200,
+                "y": 200,
+                "width": 2080,
+                "height": 15,
+                "color": "#D4AF37"
+            },
+            {
+                "id": "gold-line-bottom",
+                "type": "decoration",
+                "x": 200,
+                "y": 3308,
+                "width": 2080,
+                "height": 15,
+                "color": "#D4AF37"
+            },
+            {
+                "id": "main-title",
+                "type": "text",
+                "content": "EXCELLENCE REDEFINED",
+                "x": 1240,
+                "y": 600,
+                "fontSize": 160,
+                "fontFamily": "Georgia, serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#D4AF37"
+            },
+            {
+                "id": "hook",
+                "type": "text",
+                "field": "hookText",
+                "content": "How was your experience?",
+                "x": 1240,
+                "y": 850,
+                "fontSize": 110,
+                "fontFamily": "Georgia, serif",
+                "align": "center",
+                "color": "#ffffff"
+            },
+            {
+                "id": "stars",
+                "type": "star-rating",
+                "x": 1240,
+                "y": 1050,
+                "size": 130,
+                "color": "#D4AF37",
+                "count": 5
+            },
+            {
+                "id": "qr-frame",
+                "type": "decoration",
+                "x": 740,
+                "y": 1400,
+                "width": 1000,
+                "height": 1000,
+                "color": "#ffffff",
+                "borderRadius": 40,
+                "borderWidth": 20,
+                "strokeColor": "#D4AF37"
+            },
+            {
+                "id": "qr",
+                "type": "qr",
+                "x": 1240,
+                "y": 1900,
+                "size": 850,
+                "errorCorrection": "H"
+            },
+            {
+                "id": "cta",
+                "type": "text",
+                "field": "ctaText",
+                "content": "Scan to share your thoughts on Google",
+                "x": 1240,
+                "y": 2650,
+                "fontSize": 80,
+                "fontFamily": "Georgia, serif",
+                "align": "center",
+                "color": "#ffffff"
+            },
+            {
+                "id": "footer-brand",
+                "type": "text",
+                "field": "businessName",
+                "content": "ESTABLISHED LUXURY",
+                "x": 1240,
+                "y": 2950,
+                "fontSize": 100,
+                "fontFamily": "Georgia, serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#D4AF37"
+            }
+        ]
+    },
+    {
+        "id": "tech-vibrant-gradient",
+        "name": "Neon Dynamic Tech",
+        "description": "Modern vibrant style with neon accents and sharp geometry.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "bg",
+                "type": "decoration",
+                "x": 0,
+                "y": 0,
+                "width": 2480,
+                "height": 3508,
+                "color": "#0f172a"
+            },
+            {
+                "id": "neon-tri-1",
+                "type": "decoration",
+                "x": -200,
+                "y": -200,
+                "width": 1200,
+                "height": 1200,
+                "color": "#3b82f6",
+                "borderRadius": 600
+            },
+            {
+                "id": "neon-tri-2",
+                "type": "decoration",
+                "x": 1600,
+                "y": 2500,
+                "width": 1500,
+                "height": 1500,
+                "color": "#8b5cf6",
+                "borderRadius": 750
+            },
+            {
+                "id": "overlay",
+                "type": "decoration",
+                "x": 0,
+                "y": 0,
+                "width": 2480,
+                "height": 3508,
+                "color": "rgba(15, 23, 42, 0.85)"
+            },
+            {
+                "id": "title",
+                "type": "text",
+                "content": "WE VALUE YOU!",
+                "x": 1240,
+                "y": 500,
+                "fontSize": 180,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "900",
+                "align": "center",
+                "color": "#ffffff"
+            },
+            {
+                "id": "subtitle",
+                "type": "text",
+                "field": "hookText",
+                "content": "Share your feedback digitally",
+                "x": 1240,
+                "y": 750,
+                "fontSize": 90,
+                "fontFamily": "Inter, sans-serif",
+                "align": "center",
+                "color": "#94a3b8"
+            },
+            {
+                "id": "qr-glow",
+                "type": "decoration",
+                "x": 615,
+                "y": 1215,
+                "width": 1250,
+                "height": 1250,
+                "color": "rgba(59, 130, 246, 0.2)",
+                "borderRadius": 100
+            },
+            {
+                "id": "qr-card",
+                "type": "decoration",
+                "x": 640,
+                "y": 1240,
+                "width": 1200,
+                "height": 1200,
+                "color": "#ffffff",
+                "borderRadius": 80
+            },
+            {
+                "id": "qr",
+                "type": "qr",
+                "x": 1240,
+                "y": 1840,
+                "size": 1050,
+                "errorCorrection": "H"
+            },
+            {
+                "id": "cta-btn-bg",
+                "type": "decoration",
+                "x": 540,
+                "y": 2700,
+                "width": 1400,
+                "height": 220,
+                "color": "#3b82f6",
+                "borderRadius": 110
+            },
+            {
+                "id": "cta-text",
+                "type": "text",
+                "field": "ctaText",
+                "content": "SCAN & REVIEW",
+                "x": 1240,
+                "y": 2810,
+                "fontSize": 110,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#ffffff"
+            },
+            {
+                "id": "biz-name",
+                "type": "text",
+                "field": "businessName",
+                "content": "MODERN SOLUTIONS Inc.",
+                "x": 1240,
+                "y": 3150,
+                "fontSize": 85,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "500",
+                "align": "center",
+                "color": "#64748b"
+            }
+        ]
+    },
+    {
+        "id": "minimal-floating-card",
+        "name": "Floating Paper Card",
+        "description": "Sophisticated minimalist design with a clean 'card-on-paper' effect.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "paper-bg",
+                "type": "decoration",
+                "x": 0,
+                "y": 0,
+                "width": 2480,
+                "height": 3508,
+                "color": "#f8fafc"
+            },
+            {
+                "id": "shadow",
+                "type": "decoration",
+                "x": 280,
+                "y": 380,
+                "width": 1920,
+                "height": 2748,
+                "color": "rgba(0,0,0,0.05)",
+                "borderRadius": 40
+            },
+            {
+                "id": "card",
+                "type": "decoration",
+                "x": 240,
+                "y": 340,
+                "width": 1920,
+                "height": 2748,
+                "color": "#ffffff",
+                "borderRadius": 40
+            },
+            {
+                "id": "top-accent",
+                "type": "decoration",
+                "x": 240,
+                "y": 340,
+                "width": 1920,
+                "height": 20,
+                "color": "#4285F4",
+                "borderRadius": 0
+            },
+            {
+                "id": "logo",
+                "type": "logo",
+                "x": 1200,
+                "y": 700,
+                "maxWidth": 600,
+                "maxHeight": 300
+            },
+            {
+                "id": "biz-name",
+                "type": "text",
+                "field": "businessName",
+                "content": "Your Brand Name",
+                "x": 1200,
+                "y": 1050,
+                "fontSize": 120,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#1e293b"
+            },
+            {
+                "id": "stars",
+                "type": "star-rating",
+                "x": 1200,
+                "y": 1250,
+                "size": 100,
+                "color": "#fbbf24",
+                "count": 5
+            },
+            {
+                "id": "qr",
+                "type": "qr",
+                "x": 1200,
+                "y": 1950,
+                "size": 1000,
+                "errorCorrection": "H"
+            },
+            {
+                "id": "message",
+                "type": "text",
+                "field": "hookText",
+                "content": "Scan to view our menu & leave a review",
+                "x": 1200,
+                "y": 2650,
+                "fontSize": 80,
+                "fontFamily": "Inter, sans-serif",
+                "align": "center",
+                "color": "#64748b"
+            },
+            {
+                "id": "google-footer",
+                "type": "text",
+                "content": "Google Reviews",
+                "x": 1200,
+                "y": 2850,
+                "fontSize": 90,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "600",
+                "align": "center",
+                "color": "#94a3b8"
+            }
+        ]
     }
 ]
