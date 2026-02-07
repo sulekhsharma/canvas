@@ -18,7 +18,7 @@ export const AdminLogin = ({ onBack, onLoginSuccess }: AdminLoginProps) => {
         setLoading(true);
         setError('');
         try {
-            const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+            const apiBase = import.meta.env.VITE_API_BASE || '/api';
             const res = await fetch(`${apiBase}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
