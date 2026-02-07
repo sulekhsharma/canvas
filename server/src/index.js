@@ -331,6 +331,15 @@ async function renderToCanvas(designData, template) {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
+    if (designData.backgroundImageUrl) {
+        try {
+            const bgImg = await loadImage(designData.backgroundImageUrl);
+            ctx.drawImage(bgImg, 0, 0, width, height);
+        } catch (e) {
+            console.error('Failed to load background image for export:', e);
+        }
+    }
+
     for (const el of template.elements) {
         ctx.save();
 

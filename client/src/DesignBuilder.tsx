@@ -50,6 +50,18 @@ export const DesignBuilder: React.FC<{
         }
     };
 
+    const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setData(prev => ({ ...prev, backgroundImageUrl: reader.result as string }));
+                setHasUnsavedChanges(true);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSave = async () => {
         setIsSaving(true);
         try {
@@ -113,6 +125,13 @@ export const DesignBuilder: React.FC<{
 
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, width, height);
+
+            if (data.backgroundImageUrl) {
+                const bgImg = new Image();
+                bgImg.src = data.backgroundImageUrl;
+                await new Promise(resolve => (bgImg.onload = resolve));
+                ctx.drawImage(bgImg, 0, 0, width, height);
+            }
 
             for (const el of selectedTemplate.elements) {
                 ctx.save();
@@ -288,6 +307,23 @@ export const DesignBuilder: React.FC<{
                             </div>
                         </div>
                     </div>
+                    <div className="input-group" style={{ marginTop: '1rem' }}>
+                        <label>Background Image</label>
+                        <div className="file-upload">
+                            <label htmlFor="bg-upload" className="file-label">
+                                <ImageIcon size={18} /> {data.backgroundImageUrl ? 'Change Background' : 'Upload Background'}
+                            </label>
+                            <input id="bg-upload" type="file" accept="image/*" onChange={handleBackgroundUpload} className="hidden" />
+                            {data.backgroundImageUrl && (
+                                <button
+                                    className="remove-btn"
+                                    onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: undefined })); setHasUnsavedChanges(true); }}
+                                >
+                                    Remove Background
+                                </button>
+                            )}
+                        </div>
+                    </div>
                 </section>
 
                 <section className="form-section">
@@ -382,6 +418,8 @@ export const DesignBuilder: React.FC<{
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .hidden { display: none; }
         .file-label { display: flex; align-items: center; gap: 0.5rem; padding: 0.7rem; border: 2px dashed #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 0.8rem; color: #64748b; }
+        .remove-btn { margin-top: 0.5rem; background: #fee2e2; color: #ef4444; border: none; padding: 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; width: 100%; }
+        .remove-btn:hover { background: #fecaca; }
       `}</style>
         </div>
     );

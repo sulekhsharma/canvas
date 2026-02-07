@@ -104,6 +104,7 @@ export interface DesignData {
     primaryColor: string; // New
     secondaryColor: string; // New
     themeColor?: string;
+    backgroundImageUrl?: string;
 }
 
 export interface User {

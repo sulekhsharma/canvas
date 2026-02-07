@@ -309,5 +309,135 @@
                 "errorCorrection": "H"
             }
         ]
+    },
+    {
+        "id": "google-review-classic-white",
+        "name": "Classic Google White",
+        "description": "Authentic clean white layout with original Google branding elements.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "google-g-top",
+                "type": "logo",
+                "x": 200,
+                "y": 200,
+                "maxWidth": 180,
+                "maxHeight": 180
+            },
+            {
+                "id": "top-line",
+                "type": "decoration",
+                "x": 450,
+                "y": 290,
+                "width": 1830,
+                "height": 4,
+                "color": "#cccccc"
+            },
+            {
+                "id": "title-google",
+                "type": "text",
+                "content": "Google",
+                "x": 1240,
+                "y": 650,
+                "fontSize": 240,
+                "fontFamily": "Product Sans, Inter, sans-serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#3c4043"
+            },
+            {
+                "id": "subtitle-scan",
+                "type": "text",
+                "content": "SCAN TO WRITE A REVIEW",
+                "field": "ctaText",
+                "x": 1240,
+                "y": 950,
+                "fontSize": 100,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#202124"
+            },
+            {
+                "id": "main-qr",
+                "type": "qr",
+                "x": 1240,
+                "y": 1850,
+                "size": 1150,
+                "errorCorrection": "H"
+            },
+            {
+                "id": "thank-you",
+                "type": "text",
+                "content": "Thank you for choosing us!",
+                "field": "hookText",
+                "x": 1240,
+                "y": 2650,
+                "fontSize": 120,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "500",
+                "align": "center",
+                "color": "#202124"
+            },
+            {
+                "id": "stars",
+                "type": "star-rating",
+                "x": 1100,
+                "y": 2880,
+                "size": 110,
+                "color": "#000000",
+                "count": 5
+            },
+            {
+                "id": "rating-score",
+                "type": "text",
+                "content": "5.0",
+                "x": 1550,
+                "y": 2885,
+                "fontSize": 130,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "500",
+                "align": "center",
+                "color": "#202124"
+            },
+            {
+                "id": "out-of-5",
+                "type": "text",
+                "content": "out of 5 stars",
+                "x": 1240,
+                "y": 3020,
+                "fontSize": 60,
+                "fontFamily": "Inter, sans-serif",
+                "align": "center",
+                "color": "#5f6368"
+            },
+            {
+                "id": "feedback-message",
+                "type": "text",
+                "content": "Your feedback helps others learn more about us.",
+                "x": 1240,
+                "y": 3180,
+                "fontSize": 75,
+                "fontFamily": "Inter, sans-serif",
+                "align": "center",
+                "color": "#202124"
+            },
+            {
+                "id": "google-reviews-footer",
+                "type": "text",
+                "content": "Google Reviews",
+                "x": 1240,
+                "y": 3380,
+                "fontSize": 90,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "500",
+                "align": "center",
+                "color": "#5f6368"
+            }
+        ]
     }
 ]
