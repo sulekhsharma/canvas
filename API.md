@@ -1,5 +1,7 @@
 # API Documentation 🚀
 
+**Interactive Documentation:** [Open Swagger UI](/api-docs) (requires server running)
+
 Base URL: `/api`
 
 ## 1. QR Code Generation (Public)
@@ -22,7 +24,8 @@ You can provide parameters as individual form-fields or as a JSON key-value map.
 | **`gmbUrl`** | `string` | **Yes** | The destination URL for the QR code (e.g., your Google Review link). |
 | **`logo`** | `file` | No | A binary image file for the business logo. |
 | **`logoUrl`** | `string` | No | Alternatively, a public URL to the logo image. |
-| **`template`** | `json` | No | A JSON object or string defining the design layout. Defaults to `default.json`. |
+| **`templateId`** | `string` | No | The ID of a server-side template to use (e.g., `review-card`). Overrides `template`. |
+| **`template`** | `json` | No | A JSON object or string defining the design layout. Defaults to `default.json` if `templateId` is not provided. |
 | **`primaryColor`** | `hex` | No | The primary brand color (e.g., `#FF5733`). Used for dynamic text/decorations. |
 | **`secondaryColor`**| `hex` | No | The secondary brand color. |
 | **`businessAddress`**| `string`| No | The business address string. |
@@ -40,6 +43,33 @@ The API is flexible and automatically normalizes common field variations:
 *   `email id` -> `email`
 *   `instaurl` -> `instagramUrl`
 
+#### **Example Requests**
+
+**1. Basic JSON Request (using a template ID)**
+```bash
+curl -X POST https://your-domain.com/api/generate-qr \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gmbUrl": "https://g.page/r/YOUR_LINK_HERE",
+    "templateId": "review-card",
+    "businessName": "My Business Inc.",
+    "primaryColor": "#000000",
+    "secondaryColor": "#4285F4",
+    "hookText": "Loved your service?",
+    "ctaText": "Scan to leave a review"
+  }'
+```
+
+**2. Multipart Request (Uploading a Logo)**
+```bash
+curl -X POST https://your-domain.com/api/generate-qr \
+  -H "Content-Type: multipart/form-data" \
+  -F "gmbUrl=https://g.page/r/YOUR_LINK_HERE" \
+  -F "templateId=review-card" \
+  -F "primaryColor=#000000" \
+  -F "logo=@/path/to/your/logo.png"
+```
+
 #### **Response**
 ```json
 {
@@ -51,7 +81,36 @@ The API is flexible and automatically normalizes common field variations:
 
 ---
 
-## 2. Authentication
+## 2. Template Management (Public)
+
+### **GET** `/templates`
+
+Retrieves a list of all available server-side templates. Use the `id` from this list as the `templateId` in generation requests.
+
+#### **Example Request**
+```bash
+curl -X GET https://your-domain.com/api/templates
+```
+
+#### **Response**
+```json
+[
+  {
+    "id": "review-card",
+    "name": "Review Card",
+    "preview": null
+  },
+  {
+    "id": "default",
+    "name": "Portrait Minimal",
+    "preview": null
+  }
+]
+```
+
+---
+
+## 3. Authentication
 
 ### **POST** `/auth/login`
 Logs in an existing user.
@@ -65,7 +124,7 @@ Authenticates via Google (Mock/Prototype).
 
 ---
 
-## 3. Design Management (Protected)
+## 4. Design Management (Protected)
 Requires Header: `Authorization: Bearer <token>`
 
 ### **GET** `/designs`
@@ -84,7 +143,7 @@ Saves or updates a design.
 
 ---
 
-## 4. Export Utilities
+## 5. Export Utilities
 
 ### **POST** `/export/png`
 Renders a design to a PNG buffer on the fly.

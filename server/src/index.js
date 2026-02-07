@@ -12,6 +12,8 @@ import multer from 'multer';
 import fs from 'fs';
 import path, { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,6 +28,10 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use('/public', express.static(join(__dirname, '../public')));
 app.use(express.static(join(__dirname, '../../client/dist')));
+
+// Swagger Documentation
+const swaggerDocument = YAML.load(join(__dirname, '../swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Configure Multer
 const storage = multer.diskStorage({
@@ -199,9 +205,7 @@ async function renderToCanvas(designData, template) {
                         ctx.clip();
                         ctx.drawImage(logoImg, el.x - logoSize / 2, el.y - logoSize / 2, logoSize, logoSize);
                         ctx.restore();
-                        ctx.beginPath();
-                        ctx.arc(el.x, el.y, (logoSize + pad) / 2, 0, Math.PI * 2);
-                        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 2; ctx.stroke();
+
                     } else {
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(el.x - (logoSize + pad) / 2, el.y - (logoSize + pad) / 2, logoSize + pad, logoSize + pad);
@@ -260,6 +264,33 @@ app.post('/api/export/png', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Failed' }); }
 });
 
+app.get('/api/templates', (req, res) => {
+    try {
+        const templatesDir = join(__dirname, 'templates');
+        if (!fs.existsSync(templatesDir)) {
+            return res.json([]);
+        }
+        const files = fs.readdirSync(templatesDir).filter(file => file.endsWith('.json'));
+        const templates = files.map(file => {
+            try {
+                const content = fs.readFileSync(join(templatesDir, file), 'utf8');
+                const json = JSON.parse(content);
+                return {
+                    id: json.id || file.replace('.json', ''),
+                    name: json.name || file.replace('.json', ''),
+                    preview: json.preview || null // Optional preview image URL
+                };
+            } catch (e) {
+                return null;
+            }
+        }).filter(t => t !== null);
+        res.json(templates);
+    } catch (error) {
+        console.error("List Templates Error:", error);
+        res.status(500).json({ error: 'Failed to list templates' });
+    }
+});
+
 app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
     try {
         const { body, file } = req;
@@ -311,6 +342,17 @@ app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
         let template = null;
         if (params.template) {
             template = typeof params.template === 'string' ? JSON.parse(params.template) : params.template;
+        } else if (params.templateId) {
+            if (!/^[a-zA-Z0-9-_]+$/.test(params.templateId)) {
+                throw new Error('Invalid template ID format');
+            }
+            const templatePath = join(__dirname, 'templates', `${params.templateId}.json`);
+            if (fs.existsSync(templatePath)) {
+                const templateStr = fs.readFileSync(templatePath, 'utf8');
+                template = JSON.parse(templateStr);
+            } else {
+                throw new Error(`Template with ID '${params.templateId}' not found.`);
+            }
         } else {
             // Load default
             const templatePath = join(__dirname, 'templates', 'default.json');

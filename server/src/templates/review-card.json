@@ -1,0 +1,75 @@
+{
+    "id": "review-card",
+    "name": "Review Card",
+    "dimensions": {
+        "width": 1000,
+        "height": 1500
+    },
+    "elements": [
+        {
+            "type": "logo",
+            "x": 500,
+            "y": 200,
+            "maxWidth": 180,
+            "maxHeight": 180
+        },
+        {
+            "type": "star-rating",
+            "x": 500,
+            "y": 320,
+            "size": 40,
+            "count": 5,
+            "color": "#000000"
+        },
+        {
+            "type": "text",
+            "field": "hookText",
+            "content": "Loved your service",
+            "x": 500,
+            "y": 420,
+            "fontSize": 50,
+            "fontWeight": "bold",
+            "align": "center",
+            "lineHeight": 1.2,
+            "color": "#000000"
+        },
+        {
+            "type": "qr",
+            "x": 500,
+            "y": 750,
+            "size": 500,
+            "logoSize": 100,
+            "includeLogo": true,
+            "logoShape": "circle",
+            "logoPadding": 10
+        },
+        {
+            "type": "text",
+            "field": "ctaText",
+            "content": "Scan to leave a Google review",
+            "x": 500,
+            "y": 1080,
+            "fontSize": 36,
+            "align": "center",
+            "color": "#333333"
+        },
+        {
+            "type": "text",
+            "content": "Google Reviews",
+            "x": 500,
+            "y": 1350,
+            "fontSize": 40,
+            "fontWeight": "bold",
+            "align": "center",
+            "color": "#555555"
+        },
+        {
+            "type": "decoration",
+            "x": 150,
+            "y": 1280,
+            "width": 700,
+            "height": 2,
+            "color": "#dddddd"
+        }
+    ]
+}

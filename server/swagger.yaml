@@ -1,0 +1,282 @@
+openapi: 3.0.0
+info:
+  title: GMB QR Code Generator API
+  description: API for generating branded QR codes, managing designs, and authentication.
+  version: 1.0.0
+servers:
+  - url: https://canvas.auto-m8.pro/api
+    description: Production Server
+  - url: http://localhost:5000/api
+    description: Local development server
+tags:
+  - name: Public
+    description: Public endpoints for QR generation
+  - name: Auth
+    description: Authentication endpoints
+  - name: Designs
+    description: Design management endpoints
+  - name: Export
+    description: Export utilities
+paths:
+  /generate-qr:
+    post:
+      summary: Generate a branded QR code
+      description: Generates a QR code image based on provided parameters. content-type can be multipart/form-data (for file uploads) or application/json.
+      tags: [Public]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                gmbUrl:
+                  type: string
+                  description: The Google Maps/Review URL
+                  example: https://g.page/r/example
+                logo:
+                  type: string
+                  format: binary
+                  description: Logo image file
+                logoUrl:
+                  type: string
+                  description: URL of the logo image (if not uploading file)
+                templateId:
+                  type: string
+                  description: ID of a server-side template (e.g., review-card)
+                template:
+                  type: string
+                  description: JSON string of the template configuration
+                primaryColor:
+                  type: string
+                  description: Primary hex color (e.g. #FF5733)
+                secondaryColor:
+                  type: string
+                  description: Secondary hex color
+                businessAddress:
+                  type: string
+                mobileNumber:
+                  type: string
+                email:
+                  type: string
+                websiteUrl:
+                  type: string
+                facebookUrl:
+                  type: string
+                instagramUrl:
+                  type: string
+                data:
+                  type: string
+                  description: JSON string containing all parameters (alternative to individual fields)
+          application/json:
+             schema:
+               type: object
+               properties:
+                 gmbUrl:
+                   type: string
+                 logoUrl:
+                   type: string
+                 templateId:
+                   type: string
+                 template:
+                   type: object
+                 primaryColor:
+                   type: string
+      responses:
+        '200':
+          description: Successful generation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  url:
+                    type: string
+                  downloadUrl:
+                    type: string
+  /templates:
+    get:
+      summary: List available templates
+      tags: [Public]
+      responses:
+        '200':
+          description: List of template metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                   type: object
+                   properties:
+                     id:
+                       type: string
+                       example: review-card
+                     name:
+                       type: string
+                       example: Review Card
+                     preview:
+                       type: string
+                       format: nullable
+
+  /auth/login:
+    post:
+      summary: Login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+        '401':
+          description: Invalid credentials
+
+  /auth/google:
+    post:
+      summary: Google Login (Mock)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                name:
+                  type: string
+                googleId:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+
+  /designs:
+    get:
+      summary: Get saved designs
+      security:
+        - bearerAuth: []
+      tags: [Designs]
+      responses:
+        '200':
+          description: List of designs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+    post:
+      summary: Save a design
+      security:
+        - bearerAuth: []
+      tags: [Designs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                templateId:
+                  type: string
+                data:
+                  type: object
+      responses:
+        '200':
+          description: Saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  message:
+                    type: string
+
+  /export/png:
+    post:
+      summary: Export design to PNG
+      tags: [Export]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                designData:
+                  type: object
+                template:
+                  type: object
+      responses:
+        '200':
+          description: PNG image
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /export/pdf:
+    post:
+      summary: Export design to PDF
+      tags: [Export]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                designData:
+                  type: object
+                template:
+                  type: object
+      responses:
+        '200':
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
