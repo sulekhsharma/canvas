@@ -4,6 +4,7 @@ import { DesignBuilder } from './DesignBuilder'
 import { templates } from './templates'
 import { LoginPage } from './LoginPage'
 import { AdminPanel } from './AdminPanel'
+import { AdminLogin } from './AdminLogin'
 import type { DesignTemplate, User, DesignData } from './types'
 import { LogOut, Plus, Clock, LayoutGrid } from 'lucide-react'
 
@@ -15,26 +16,33 @@ function App() {
   const [editingDesign, setEditingDesign] = useState<DesignData | null>(null)
   const [view, setView] = useState<'selection' | 'history'>('selection')
   const [showAdmin, setShowAdmin] = useState(false)
+  const [showAdminLogin, setShowAdminLogin] = useState(false)
 
   useEffect(() => {
+    // Check for Admin URL access on load
+    if (window.location.pathname === '/admin') {
+      if (token) {
+        // Logged in
+        const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+        if (storedUser?.role === 'admin' || user?.role === 'admin') {
+          setShowAdmin(true);
+        } else {
+          // Not authorized
+          window.history.pushState({}, '', '/');
+          setShowAdmin(false);
+        }
+      } else {
+        // Not logged in, show specific Admin Login
+        setShowAdminLogin(true);
+      }
+    }
+
     if (token) {
       // Refresh user data from local storage
       const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
       if (storedUser && storedUser.role !== user?.role) {
         setUser(storedUser);
       }
-
-      // Check for Admin URL access
-      if (window.location.pathname === '/admin') {
-        if (storedUser?.role === 'admin' || user?.role === 'admin') {
-          setShowAdmin(true);
-        } else {
-          // Not authorized, redirect to home
-          window.history.pushState({}, '', '/');
-          setShowAdmin(false);
-        }
-      }
-
       fetchDesigns()
     }
   }, [token])
@@ -66,6 +74,12 @@ function App() {
     }
   }
 
+  const handleAdminLoginSuccess = (newToken: string, newUser: User) => {
+    handleLogin(newToken, newUser);
+    setShowAdmin(true);
+    setShowAdminLogin(false);
+  }
+
   const handleLogout = () => {
     setToken(null)
     setUser(null)
@@ -74,12 +88,26 @@ function App() {
     setSelectedTemplate(null)
     setEditingDesign(null)
     setShowAdmin(false)
+    setShowAdminLogin(false)
   }
 
   const startEditing = (design: any) => {
     const template = templates.find(t => t.id === design.template_id) || templates[0]
     setEditingDesign(design.data)
     setSelectedTemplate(template)
+  }
+
+  // Admin Login Screen (checks !token to prevent showing if already logged in)
+  if (showAdminLogin && !token) {
+    return (
+      <AdminLogin
+        onBack={() => {
+          setShowAdminLogin(false);
+          window.history.pushState({}, '', '/');
+        }}
+        onLoginSuccess={handleAdminLoginSuccess}
+      />
+    );
   }
 
   if (!token) {
