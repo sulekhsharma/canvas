@@ -124,8 +124,14 @@ export function syncDatabase() {
     if (templateCount === 0) {
       console.log('Seeding default templates...');
       try {
-        const templatesPath = path.join(__dirname, '../../client/src/templates.json');
+        let templatesPath = path.join(__dirname, 'templates.json');
+        if (!fs.existsSync(templatesPath)) {
+          // Fallback legacy/development path
+          templatesPath = path.join(__dirname, '../../client/src/templates.json');
+        }
+
         if (fs.existsSync(templatesPath)) {
+          console.log(`Loading templates from: ${templatesPath}`);
           const templatesData = JSON.parse(fs.readFileSync(templatesPath, 'utf8'));
           const stmt = db.prepare('INSERT INTO templates (id, name, description, data) VALUES (?, ?, ?, ?)');
           for (const t of templatesData) {
@@ -133,7 +139,7 @@ export function syncDatabase() {
           }
           console.log(`Seeded ${templatesData.length} templates.`);
         } else {
-          console.warn('templates.json not found at', templatesPath);
+          console.warn('templates.json not found specifically at', templatesPath);
         }
       } catch (e) {
         console.error('Failed to seed templates:', e);
