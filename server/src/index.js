@@ -26,6 +26,27 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
 app.use(cors());
 app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const userEmail = req.user ? req.user.email : 'guest';
+        try {
+            db.prepare(`
+                INSERT INTO api_logs (method, url, user_email, status_code, duration, ip, user_agent)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                req.method,
+                req.url,
+                userEmail,
+                res.statusCode,
+                duration,
+                req.ip || req.get('x-forwarded-for') || 'unknown',
+                req.get('user-agent') || 'unknown'
+            );
+        } catch (e) {
+            console.error('Failed to log API request:', e);
+        }
+    });
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
@@ -111,6 +132,17 @@ const authenticateAdmin = (req, res, next) => {
     next();
 };
 
+// --- TEMPLATE ROUTES ---
+
+app.get('/api/templates', (req, res) => {
+    try {
+        const templates = db.prepare('SELECT * FROM templates WHERE is_active = 1').all();
+        res.json(templates.map(t => JSON.parse(t.data)));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch templates' });
+    }
+});
+
 // --- ADMIN ROUTES ---
 
 app.get('/api/admin/users', authenticateToken, authenticateAdmin, (req, res) => {
@@ -175,6 +207,59 @@ app.post('/api/admin/sync', authenticateToken, authenticateAdmin, (req, res) => 
     } catch (error) {
         console.error('Manual sync failed:', error);
         res.status(500).json({ error: 'Database sync failed' });
+    }
+});
+
+// Admin Templates Management
+app.get('/api/admin/templates', authenticateToken, authenticateAdmin, (req, res) => {
+    try {
+        const templates = db.prepare('SELECT * FROM templates ORDER BY created_at DESC').all();
+        res.json(templates.map(t => ({ ...t, data: JSON.parse(t.data) })));
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch templates' });
+    }
+});
+
+app.post('/api/admin/templates', authenticateToken, authenticateAdmin, (req, res) => {
+    const { id, name, description, data } = req.body;
+    try {
+        db.prepare('INSERT INTO templates (id, name, description, data) VALUES (?, ?, ?, ?)')
+            .run(id || uuidv4(), name, description, JSON.stringify(data));
+        res.json({ message: 'Template created successfully' });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to create template' });
+    }
+});
+
+app.put('/api/admin/templates/:id', authenticateToken, authenticateAdmin, (req, res) => {
+    const { id } = req.params;
+    const { name, description, data, is_active } = req.body;
+    try {
+        db.prepare('UPDATE templates SET name = ?, description = ?, data = ?, is_active = ? WHERE id = ?')
+            .run(name, description, JSON.stringify(data), is_active ? 1 : 0, id);
+        res.json({ message: 'Template updated successfully' });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to update template' });
+    }
+});
+
+app.delete('/api/admin/templates/:id', authenticateToken, authenticateAdmin, (req, res) => {
+    const { id } = req.params;
+    try {
+        db.prepare('DELETE FROM templates WHERE id = ?').run(id);
+        res.json({ message: 'Template deleted successfully' });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to delete template' });
+    }
+});
+
+// API Logs
+app.get('/api/admin/logs', authenticateToken, authenticateAdmin, (req, res) => {
+    try {
+        const logs = db.prepare('SELECT * FROM api_logs ORDER BY timestamp DESC LIMIT 200').all();
+        res.json(logs);
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch logs' });
     }
 });
 
@@ -353,32 +438,7 @@ app.post('/api/export/png', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Failed' }); }
 });
 
-app.get('/api/templates', (req, res) => {
-    try {
-        const templatesDir = join(__dirname, 'templates');
-        if (!fs.existsSync(templatesDir)) {
-            return res.json([]);
-        }
-        const files = fs.readdirSync(templatesDir).filter(file => file.endsWith('.json'));
-        const templates = files.map(file => {
-            try {
-                const content = fs.readFileSync(join(templatesDir, file), 'utf8');
-                const json = JSON.parse(content);
-                return {
-                    id: json.id || file.replace('.json', ''),
-                    name: json.name || file.replace('.json', ''),
-                    preview: json.preview || null // Optional preview image URL
-                };
-            } catch (e) {
-                return null;
-            }
-        }).filter(t => t !== null);
-        res.json(templates);
-    } catch (error) {
-        console.error("List Templates Error:", error);
-        res.status(500).json({ error: 'Failed to list templates' });
-    }
-});
+
 
 app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
     try {
@@ -432,25 +492,21 @@ app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
         if (params.template) {
             template = typeof params.template === 'string' ? JSON.parse(params.template) : params.template;
         } else if (params.templateId) {
-            if (!/^[a-zA-Z0-9-_]+$/.test(params.templateId)) {
-                throw new Error('Invalid template ID format');
-            }
-            const templatePath = join(__dirname, 'templates', `${params.templateId}.json`);
-            if (fs.existsSync(templatePath)) {
-                const templateStr = fs.readFileSync(templatePath, 'utf8');
-                template = JSON.parse(templateStr);
+            const t = db.prepare('SELECT data FROM templates WHERE id = ?').get(params.templateId);
+            if (t) {
+                template = JSON.parse(t.data);
             } else {
-                throw new Error(`Template with ID '${params.templateId}' not found.`);
+                throw new Error(`Template with ID '${params.templateId}' not found in database.`);
             }
         } else {
-            // Load default
-            const templatePath = join(__dirname, 'templates', 'default.json');
-            if (fs.existsSync(templatePath)) {
-                const templateStr = fs.readFileSync(templatePath, 'utf8');
-                template = JSON.parse(templateStr);
+            // Load first available template as default
+            const t = db.prepare('SELECT data FROM templates LIMIT 1').get();
+            if (t) {
+                template = JSON.parse(t.data);
             } else {
-                // Fallback minimal template if file missing
+                // Fallback minimal template if DB is empty
                 template = {
+                    id: 'fallback',
                     dimensions: { width: 1000, height: 1000 },
                     elements: [{ type: 'qr', x: 500, y: 500, size: 800 }]
                 };

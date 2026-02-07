@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Users, Layout, RefreshCw, Database } from 'lucide-react';
-import type { User, DesignData } from './types';
+import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X } from 'lucide-react';
+import type { User, DesignData, DesignTemplate } from './types';
 
 interface AdminPanelProps {
     token: string;
@@ -20,13 +20,30 @@ interface AdminDesign {
     updated_at: string;
 }
 
+interface AdminLog {
+    id: number;
+    method: string;
+    url: string;
+    user_email: string;
+    status_code: number;
+    duration: number;
+    ip: string;
+    timestamp: string;
+}
+
 export function AdminPanel({ token, onClose }: AdminPanelProps) {
-    const [view, setView] = useState<'users' | 'designs'>('users');
+    const [view, setView] = useState<'users' | 'designs' | 'templates' | 'logs'>('users');
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [designs, setDesigns] = useState<AdminDesign[]>([]);
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [logs, setLogs] = useState<AdminLog[]>([]);
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Template Modal State
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [editingTemplate, setEditingTemplate] = useState<any>(null);
 
     const apiBase = import.meta.env.VITE_API_BASE || '/api';
 
@@ -38,20 +55,23 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
         setLoading(true);
         setError(null);
         try {
+            const headers = { 'Authorization': `Bearer ${token}` };
             if (view === 'users') {
-                const res = await fetch(`${apiBase}/admin/users`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await fetch(`${apiBase}/admin/users`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch users');
-                const data = await res.json();
-                setUsers(data);
-            } else {
-                const res = await fetch(`${apiBase}/admin/designs`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                setUsers(await res.json());
+            } else if (view === 'designs') {
+                const res = await fetch(`${apiBase}/admin/designs`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch designs');
-                const data = await res.json();
-                setDesigns(data);
+                setDesigns(await res.json());
+            } else if (view === 'templates') {
+                const res = await fetch(`${apiBase}/admin/templates`, { headers });
+                if (!res.ok) throw new Error('Failed to fetch templates');
+                setTemplates(await res.json());
+            } else if (view === 'logs') {
+                const res = await fetch(`${apiBase}/admin/logs`, { headers });
+                if (!res.ok) throw new Error('Failed to fetch logs');
+                setLogs(await res.json());
             }
         } catch (err: any) {
             setError(err.message);
@@ -84,7 +104,6 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
 
     const handleDeleteUser = async (id: string) => {
         if (!confirm('Are you sure you want to delete this user and all their designs?')) return;
-
         try {
             const res = await fetch(`${apiBase}/admin/users/${id}`, {
                 method: 'DELETE',
@@ -97,6 +116,48 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
             }
         } catch (e) {
             alert('Error deleting user');
+        }
+    };
+
+    const handleSaveTemplate = async (template: any) => {
+        try {
+            const isUpdate = !!template.id && templates.some(t => t.id === template.id);
+            const url = isUpdate ? `${apiBase}/admin/templates/${template.id}` : `${apiBase}/admin/templates`;
+            const method = isUpdate ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(template)
+            });
+
+            if (res.ok) {
+                setShowTemplateModal(false);
+                setEditingTemplate(null);
+                fetchData();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to save template');
+            }
+        } catch (e) {
+            alert('Error saving template');
+        }
+    };
+
+    const handleDeleteTemplate = async (id: string) => {
+        if (!confirm('Delete this template?')) return;
+        try {
+            const res = await fetch(`${apiBase}/admin/templates/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) fetchData();
+            else alert('Failed to delete template');
+        } catch (e) {
+            alert('Error deleting template');
         }
     };
 
@@ -130,6 +191,18 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     onClick={() => setView('designs')}
                 >
                     <Layout size={18} /> All Designs
+                </button>
+                <button
+                    className={view === 'templates' ? 'active' : ''}
+                    onClick={() => setView('templates')}
+                >
+                    <FileText size={18} /> Templates
+                </button>
+                <button
+                    className={view === 'logs' ? 'active' : ''}
+                    onClick={() => setView('logs')}
+                >
+                    <Terminal size={18} /> API Logs
                 </button>
             </div>
 
@@ -202,7 +275,89 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                         ))}
                     </div>
                 )}
+
+                {!loading && !error && view === 'templates' && (
+                    <div className="templates-admin">
+                        <div className="view-header">
+                            <h3>Manage Templates</h3>
+                            <button className="add-btn" onClick={() => { setEditingTemplate(null); setShowTemplateModal(true); }}>
+                                <Plus size={16} /> Add New Template
+                            </button>
+                        </div>
+                        <div className="table-responsive">
+                            <table className="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>ID</th>
+                                        <th>Active</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {templates.map(t => (
+                                        <tr key={t.id}>
+                                            <td>{t.name}</td>
+                                            <td><code>{t.id}</code></td>
+                                            <td>{t.is_active ? '✅' : '❌'}</td>
+                                            <td className="actions-cell">
+                                                <button className="edit-btn-text" onClick={() => { setEditingTemplate(t); setShowTemplateModal(true); }}>Edit</button>
+                                                <button className="delete-btn-text" onClick={() => handleDeleteTemplate(t.id)}>Delete</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {!loading && !error && view === 'logs' && (
+                    <div className="logs-admin">
+                        <div className="table-responsive">
+                            <table className="admin-table logs-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>User</th>
+                                        <th>Request</th>
+                                        <th>Status</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {logs.map(log => (
+                                        <tr key={log.id}>
+                                            <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
+                                            <td title={log.ip}>{log.user_email}</td>
+                                            <td>
+                                                <span className={`method-badge ${log.method.toLowerCase()}`}>{log.method}</span>
+                                                <code className="url-code">{log.url}</code>
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge ${log.status_code >= 400 ? 'error' : 'success'}`}>
+                                                    {log.status_code}
+                                                </span>
+                                            </td>
+                                            <td>{log.duration}ms</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {
+                showTemplateModal && (
+                    <TemplateModal
+                        template={editingTemplate}
+                        onClose={() => setShowTemplateModal(false)}
+                        onSave={handleSaveTemplate}
+                    />
+                )
+            }
 
             <style>{`
                 .admin-container {
@@ -352,7 +507,122 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     color: #64748b;
                     font-size: 1.1rem;
                 }
+
+                /* New Styles */
+                .view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+                .add-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+                .edit-btn-text { color: #2563eb; background: none; border: none; cursor: pointer; margin-right: 1rem; font-weight: 600; }
+                .delete-btn-text { color: #ef4444; background: none; border: none; cursor: pointer; font-weight: 600; }
+                
+                .method-badge { padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; margin-right: 0.5rem; }
+                .method-badge.get { background: #dcfce7; color: #166534; }
+                .method-badge.post { background: #ecfeff; color: #0891b2; }
+                .method-badge.put { background: #fef9c3; color: #854d0e; }
+                .method-badge.delete { background: #fee2e2; color: #991b1b; }
+                .url-code { font-size: 0.8rem; color: #475569; }
+                .status-badge { padding: 0.2rem 0.5rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; }
+                .status-badge.success { background: #dcfce7; color: #166534; }
+                .status-badge.error { background: #fee2e2; color: #991b1b; }
+
+                .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+                .modal-content { background: white; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; border-radius: 12px; padding: 2rem; position: relative; }
+                .modal-close { position: absolute; top: 1rem; right: 1rem; cursor: pointer; color: #64748b; }
+                
+                .template-form { display: flex; flex-direction: column; gap: 1.5rem; }
+                .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+                .form-group label { font-weight: 600; color: #1e293b; }
+                .form-group input, .form-group textarea { padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; }
+                .form-group textarea { font-family: monospace; font-size: 0.85rem; min-height: 300px; }
+                .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+                .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; }
+                .save-btn { padding: 0.75rem 2rem; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+                .cancel-btn { padding: 0.75rem 2rem; background: #f1f5f9; color: #64748b; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
             `}</style>
+        </div>
+    );
+}
+
+function TemplateModal({ template, onClose, onSave }: { template: any, onClose: () => void, onSave: (t: any) => void }) {
+    const [formData, setFormData] = useState({
+        id: template?.id || '',
+        name: template?.name || '',
+        description: template?.description || '',
+        data: template ? JSON.stringify(template.data, null, 2) : '',
+        is_active: template?.is_active !== undefined ? template.is_active : true
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const parsedData = JSON.parse(formData.data);
+            onSave({
+                ...formData,
+                data: parsedData
+            });
+        } catch (err) {
+            alert('Invalid JSON in template data');
+        }
+    };
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <button className="modal-close" onClick={onClose}><X size={24} /></button>
+                <h3>{template ? 'Edit Template' : 'Add New Template'}</h3>
+                <form className="template-form" onSubmit={handleSubmit}>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Template Name</label>
+                            <input
+                                required
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="Business Card Portrait"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Template ID (Slug)</label>
+                            <input
+                                required
+                                value={formData.id}
+                                onChange={e => setFormData({ ...formData, id: e.target.value })}
+                                placeholder="business-card-p"
+                                disabled={!!template}
+                            />
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        <label>Description</label>
+                        <input
+                            value={formData.description}
+                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                            placeholder="Standard portrait business card setup"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Template Configuration (JSON Elements)</label>
+                        <textarea
+                            required
+                            value={formData.data}
+                            onChange={e => setFormData({ ...formData, data: e.target.value })}
+                            placeholder='{ "orientation": "portrait", "dimensions": {...}, "elements": [...] }'
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={formData.is_active}
+                                onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
+                            /> Active
+                        </label>
+                    </div>
+                    <div className="form-actions">
+                        <button type="button" className="cancel-btn" onClick={onClose}>Cancel</button>
+                        <button type="submit" className="save-btn">Save Template</button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }

@@ -38,6 +38,27 @@ db.exec(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS templates (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    description TEXT,
+    data TEXT, -- JSON structure of the template
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS api_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    method TEXT,
+    url TEXT,
+    user_email TEXT,
+    status_code INTEGER,
+    duration INTEGER,
+    ip TEXT,
+    user_agent TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration function to ensure schema is up to date
@@ -72,6 +93,22 @@ export function syncDatabase() {
     if (!hasDesignUpdatedAt) {
       db.prepare("ALTER TABLE designs ADD COLUMN updated_at DATETIME").run();
       console.log('Added updated_at column to designs table');
+    }
+
+    // Seed Templates if empty
+    const templateCount = db.prepare('SELECT COUNT(*) as count FROM templates').get().count;
+    if (templateCount === 0) {
+      console.log('Seeding default templates...');
+      try {
+        const templatesData = JSON.parse(fs.readFileSync(path.join(__dirname, '../../client/src/templates.json'), 'utf8'));
+        const stmt = db.prepare('INSERT INTO templates (id, name, description, data) VALUES (?, ?, ?, ?)');
+        for (const t of templatesData) {
+          stmt.run(t.id, t.name, t.description, JSON.stringify(t));
+        }
+        console.log(`Seeded ${templatesData.length} templates.`);
+      } catch (e) {
+        console.error('Failed to seed templates:', e);
+      }
     }
 
     console.log('Database schema sync complete.');

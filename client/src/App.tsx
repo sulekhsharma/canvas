@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import './index.css'
 import { DesignBuilder } from './DesignBuilder'
-import { templates } from './templates'
 import { LoginPage } from './LoginPage'
 import { AdminPanel } from './AdminPanel'
 import { AdminLogin } from './AdminLogin'
@@ -12,11 +11,14 @@ function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
   const [user, setUser] = useState<User | null>(JSON.parse(localStorage.getItem('user') || 'null'))
   const [selectedTemplate, setSelectedTemplate] = useState<DesignTemplate | null>(null)
+  const [dynamicTemplates, setDynamicTemplates] = useState<DesignTemplate[]>([])
   const [myDesigns, setMyDesigns] = useState<any[]>([])
   const [editingDesign, setEditingDesign] = useState<DesignData | null>(null)
   const [view, setView] = useState<'selection' | 'history'>('selection')
   const [showAdmin, setShowAdmin] = useState(false)
   const [showAdminLogin, setShowAdminLogin] = useState(false)
+
+  const apiBase = import.meta.env.VITE_API_BASE || '/api';
 
   useEffect(() => {
     // Check for Admin URL access on load
@@ -37,6 +39,8 @@ function App() {
       }
     }
 
+    fetchTemplates()
+
     if (token) {
       // Refresh user data from local storage
       const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
@@ -47,9 +51,18 @@ function App() {
     }
   }, [token])
 
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch(`${apiBase}/templates`)
+      const data = await res.json()
+      if (res.ok) setDynamicTemplates(data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const fetchDesigns = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_BASE || '/api';
       const res = await fetch(`${apiBase}/designs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -92,7 +105,7 @@ function App() {
   }
 
   const startEditing = (design: any) => {
-    const template = templates.find(t => t.id === design.template_id) || templates[0]
+    const template = dynamicTemplates.find(t => t.id === design.template_id) || dynamicTemplates[0]
     setEditingDesign(design.data)
     setSelectedTemplate(template)
   }
@@ -156,7 +169,8 @@ function App() {
             <h1>Select a Design Base</h1>
             <p>Start fresh with a professional, conversion-optimized template.</p>
             <div className="template-grid">
-              {templates.map(template => (
+              {dynamicTemplates.length === 0 && <p>Loading templates...</p>}
+              {dynamicTemplates.map(template => (
                 <div key={template.id} className="template-card" onClick={() => setSelectedTemplate(template)}>
                   <div className={`preview-placeholder ${template.orientation}`}>
                     {template.orientation === 'portrait' ? <LayoutGrid /> : <LayoutGrid style={{ transform: 'rotate(90deg)' }} />}
