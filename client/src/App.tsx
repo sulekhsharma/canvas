@@ -5,7 +5,7 @@ import { templates } from './templates'
 import { LoginPage } from './LoginPage'
 import { AdminPanel } from './AdminPanel'
 import type { DesignTemplate, User, DesignData } from './types'
-import { LogOut, Plus, Clock, LayoutGrid, ShieldCheck } from 'lucide-react'
+import { LogOut, Plus, Clock, LayoutGrid } from 'lucide-react'
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
@@ -18,11 +18,23 @@ function App() {
 
   useEffect(() => {
     if (token) {
-      // Refresh user data from local storage to ensure role updates are caught if re-logging
+      // Refresh user data from local storage
       const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
       if (storedUser && storedUser.role !== user?.role) {
         setUser(storedUser);
       }
+
+      // Check for Admin URL access
+      if (window.location.pathname === '/admin') {
+        if (storedUser?.role === 'admin' || user?.role === 'admin') {
+          setShowAdmin(true);
+        } else {
+          // Not authorized, redirect to home
+          window.history.pushState({}, '', '/');
+          setShowAdmin(false);
+        }
+      }
+
       fetchDesigns()
     }
   }, [token])
@@ -45,6 +57,13 @@ function App() {
     setUser(newUser)
     localStorage.setItem('token', newToken)
     localStorage.setItem('user', JSON.stringify(newUser))
+
+    // Redirect to admin if that was the intended destination
+    if (window.location.pathname === '/admin' && newUser.role === 'admin') {
+      setShowAdmin(true);
+    } else if (window.location.pathname === '/admin') {
+      window.history.pushState({}, '', '/');
+    }
   }
 
   const handleLogout = () => {
@@ -68,7 +87,10 @@ function App() {
   }
 
   if (showAdmin && user?.role === 'admin') {
-    return <AdminPanel token={token} onClose={() => setShowAdmin(false)} />
+    return <AdminPanel token={token} onClose={() => {
+      setShowAdmin(false);
+      window.history.pushState({}, '', '/');
+    }} />
   }
 
   if (selectedTemplate) {
@@ -87,15 +109,6 @@ function App() {
       <nav className="top-nav">
         <div className="nav-brand">GMB QR Generator</div>
         <div className="nav-actions">
-          {user?.role === 'admin' && (
-            <button
-              onClick={() => setShowAdmin(true)}
-              className={showAdmin ? 'active admin-btn' : 'admin-btn'}
-              style={{ color: '#dc2626', background: '#fef2f2' }}
-            >
-              <ShieldCheck size={18} /> Admin
-            </button>
-          )}
           <button onClick={() => setView('selection')} className={view === 'selection' ? 'active' : ''}>
             <Plus size={18} /> New Design
           </button>
