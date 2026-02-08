@@ -26,6 +26,7 @@ export interface TextElement extends ElementBase {
     color: string;
     rotation?: number;
     lineHeight?: number;
+    maxWidth?: number;
 }
 
 export interface QRElement extends ElementBase {

@@ -271,7 +271,7 @@ export const DesignBuilder: React.FC<{
 
                     const inputLines = textValue.split('\n');
                     let allLines: string[] = [];
-                    inputLines.forEach(line => {
+                    inputLines.forEach((line: string) => {
                         if (el.maxWidth) {
                             allLines = allLines.concat(wrapText(line, el.maxWidth));
                         } else {
