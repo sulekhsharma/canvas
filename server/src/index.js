@@ -288,7 +288,10 @@ app.get('/api/admin/business-data', authenticateToken, authenticateAdmin, (req, 
 
         const designEntries = designs.map(d => {
             let parsedData = {};
-            try { parsedData = JSON.parse(d.data); } catch (e) { }
+            try {
+                const p = JSON.parse(d.data);
+                if (p && typeof p === 'object') parsedData = p;
+            } catch (e) { }
             return {
                 id: d.id,
                 businessName: parsedData.businessName || parsedData.business_name || '-',
@@ -312,10 +315,18 @@ app.get('/api/admin/business-data', authenticateToken, authenticateAdmin, (req, 
         const logEntries = logs.map(l => {
             let parsedData = {};
             try {
-                parsedData = JSON.parse(l.request_body);
-                // Handle nested 'data' field often sent via multipart
-                if (parsedData.data && typeof parsedData.data === 'string') {
-                    try { parsedData = { ...parsedData, ...JSON.parse(parsedData.data) }; } catch (e) { }
+                const p = JSON.parse(l.request_body);
+                if (p && typeof p === 'object') {
+                    parsedData = p;
+                    // Handle nested 'data' field often sent via multipart
+                    if (parsedData.data && typeof parsedData.data === 'string') {
+                        try {
+                            const nested = JSON.parse(parsedData.data);
+                            if (nested && typeof nested === 'object') {
+                                parsedData = { ...parsedData, ...nested };
+                            }
+                        } catch (e) { }
+                    }
                 }
             } catch (e) { }
 
@@ -570,9 +581,41 @@ async function renderToCanvas(designData, template) {
             ctx.font = `${el.fontWeight || 'normal'} ${el.fontSize}px Arial`;
             ctx.textAlign = el.align;
             ctx.textBaseline = 'middle';
-            const lines = textValue.split('\n');
+
+            const maxWidth = el.maxWidth || (width - el.x - 100); // Default to design edge
             const lineHeight = el.lineHeight || 1.2;
-            lines.forEach((line, i) => {
+
+            // Helper to wrap text
+            const wrapText = (text, maxLength) => {
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = words[0];
+
+                for (let i = 1; i < words.length; i++) {
+                    const word = words[i];
+                    const width = ctx.measureText(currentLine + " " + word).width;
+                    if (width < maxLength) {
+                        currentLine += " " + word;
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+                lines.push(currentLine);
+                return lines;
+            };
+
+            const inputLines = textValue.split('\n');
+            let allLines = [];
+            inputLines.forEach(line => {
+                if (el.maxWidth) {
+                    allLines = allLines.concat(wrapText(line, el.maxWidth));
+                } else {
+                    allLines.push(line);
+                }
+            });
+
+            allLines.forEach((line, i) => {
                 ctx.fillText(line, 0, i * el.fontSize * lineHeight);
             });
         }

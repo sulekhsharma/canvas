@@ -136,12 +136,19 @@ export function syncDatabase() {
 
     // api_logs table migrations
     const logTableInfo = db.prepare("PRAGMA table_info(api_logs)").all();
-    const hasHeaders = logTableInfo.some(col => col.name === 'headers');
-    if (!hasHeaders && logTableInfo.length > 0) {
+    const existingLogCols = logTableInfo.map(c => c.name);
+
+    if (!existingLogCols.includes('headers')) {
       db.prepare("ALTER TABLE api_logs ADD COLUMN headers TEXT").run();
+      console.log('Added headers column to api_logs table');
+    }
+    if (!existingLogCols.includes('request_body')) {
       db.prepare("ALTER TABLE api_logs ADD COLUMN request_body TEXT").run();
+      console.log('Added request_body column to api_logs table');
+    }
+    if (!existingLogCols.includes('response_body')) {
       db.prepare("ALTER TABLE api_logs ADD COLUMN response_body TEXT").run();
-      console.log('Added headers and body columns to api_logs table');
+      console.log('Added response_body column to api_logs table');
     }
 
     // Background Images Table

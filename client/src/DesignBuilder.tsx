@@ -55,6 +55,29 @@ export const DesignBuilder: React.FC<{
     const [backgrounds, setBackgrounds] = useState<any[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showBgModal, setShowBgModal] = useState(false);
+    const imageCache = useRef<Record<string, HTMLImageElement>>({});
+
+    // Helper to get cached image or load it
+    const getCachedImage = (url: string): Promise<HTMLImageElement> => {
+        const fullUrl = getAssetUrl(url);
+        if (imageCache.current[fullUrl] && imageCache.current[fullUrl].complete) {
+            return Promise.resolve(imageCache.current[fullUrl]);
+        }
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = fullUrl;
+            img.onload = () => {
+                imageCache.current[fullUrl] = img;
+                resolve(img);
+            };
+            img.onerror = () => {
+                // Return an empty transparent image if load fails
+                const empty = new Image();
+                resolve(empty);
+            };
+        });
+    };
 
     useEffect(() => {
         fetch(`${API_BASE}/backgrounds`)
@@ -161,138 +184,187 @@ export const DesignBuilder: React.FC<{
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas || !qrBase64) return;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false }); // Optimization
         if (!ctx) return;
 
-        const render = async () => {
-            const { width, height } = selectedTemplate.dimensions;
-            canvas.width = width;
-            canvas.height = height;
+        let isCancelled = false;
 
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, width, height);
+        const render = async () => {
+            if (isCancelled) return;
+            const { width, height } = selectedTemplate.dimensions;
+
+            // Create off-screen canvas for double buffering
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = width;
+            offCanvas.height = height;
+            const octx = offCanvas.getContext('2d');
+            if (!octx) return;
+
+            // Clear off-screen
+            octx.fillStyle = '#ffffff';
+            octx.fillRect(0, 0, width, height);
 
             if (data.backgroundImageUrl) {
-                const bgImg = new Image();
-                bgImg.crossOrigin = 'anonymous';
-                bgImg.src = getAssetUrl(data.backgroundImageUrl);
-                await new Promise(resolve => (bgImg.onload = resolve));
-                ctx.drawImage(bgImg, 0, 0, width, height);
+                const bgImg = await getCachedImage(data.backgroundImageUrl);
+                if (bgImg.width > 0) {
+                    octx.drawImage(bgImg, 0, 0, width, height);
+                }
             }
 
             for (const el of selectedTemplate.elements) {
-                ctx.save();
+                octx.save();
 
                 if (el.type === 'decoration') {
                     const radius = el.borderRadius || 0;
                     const x = el.x; const y = el.y; const w = el.width; const h = el.height;
-                    ctx.beginPath();
-                    ctx.moveTo(x + radius, y);
-                    ctx.lineTo(x + w - radius, y);
-                    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-                    ctx.lineTo(x + w, y + h - radius);
-                    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-                    ctx.lineTo(x + radius, y + h);
-                    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-                    ctx.lineTo(x, y + radius);
-                    ctx.quadraticCurveTo(x, y, x + radius, y);
-                    ctx.closePath();
+                    octx.beginPath();
+                    octx.moveTo(x + radius, y);
+                    octx.lineTo(x + w - radius, y);
+                    octx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                    octx.lineTo(x + w, y + h - radius);
+                    octx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+                    octx.lineTo(x + radius, y + h);
+                    octx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                    octx.lineTo(x, y + radius);
+                    octx.quadraticCurveTo(x, y, x + radius, y);
+                    octx.closePath();
 
                     let color = (data.elementColors && data.elementColors[el.id]) || el.color;
-                    if (color) { ctx.fillStyle = color; ctx.fill(); }
-                    if (el.strokeColor && el.borderWidth) { ctx.strokeStyle = el.strokeColor; ctx.lineWidth = el.borderWidth; ctx.stroke(); }
+                    if (color) { octx.fillStyle = color; octx.fill(); }
+                    if (el.strokeColor && el.borderWidth) { octx.strokeStyle = el.strokeColor; octx.lineWidth = el.borderWidth; octx.stroke(); }
                 }
 
                 if (el.type === 'text') {
                     const userValue = el.field ? (data as any)[el.field] : null;
                     const textValue = (userValue && userValue.trim() !== '') ? userValue : el.content;
-                    if (!textValue) { ctx.restore(); continue; }
-                    ctx.translate(el.x, el.y);
-                    if (el.rotation) ctx.rotate((el.rotation * Math.PI) / 180);
+                    if (!textValue) { octx.restore(); continue; }
+                    octx.translate(el.x, el.y);
+                    if (el.rotation) octx.rotate((el.rotation * Math.PI) / 180);
 
-                    // DYNAMIC COLORS
                     let color = (data.elementColors && data.elementColors[el.id]) || el.color;
+                    octx.fillStyle = color;
+                    octx.font = `${el.fontWeight || 'normal'} ${el.fontSize}px Inter, sans-serif`;
+                    octx.textAlign = el.align;
+                    octx.textBaseline = 'middle';
 
-                    ctx.fillStyle = color;
-                    ctx.font = `${el.fontWeight || 'normal'} ${el.fontSize}px Inter, sans-serif`;
-                    ctx.textAlign = el.align;
-                    ctx.textBaseline = 'middle';
-                    const lines = textValue.split('\n');
                     const lineHeight = el.lineHeight || 1.2;
-                    lines.forEach((line: string, i: number) => {
-                        ctx.fillText(line, 0, i * el.fontSize * lineHeight);
+
+                    // Helper to wrap text
+                    const wrapText = (text: string, maxLength: number) => {
+                        const words = text.split(' ');
+                        const lines = [];
+                        let currentLine = words[0];
+
+                        for (let i = 1; i < words.length; i++) {
+                            const word = words[i];
+                            const width = octx.measureText(currentLine + " " + word).width;
+                            if (width < maxLength) {
+                                currentLine += " " + word;
+                            } else {
+                                lines.push(currentLine);
+                                currentLine = word;
+                            }
+                        }
+                        lines.push(currentLine);
+                        return lines;
+                    };
+
+                    const inputLines = textValue.split('\n');
+                    let allLines: string[] = [];
+                    inputLines.forEach(line => {
+                        if (el.maxWidth) {
+                            allLines = allLines.concat(wrapText(line, el.maxWidth));
+                        } else {
+                            allLines.push(line);
+                        }
+                    });
+
+                    allLines.forEach((line: string, i: number) => {
+                        octx.fillText(line, 0, i * el.fontSize * lineHeight);
                     });
                 }
 
                 if (el.type === 'logo' && data.logoUrl) {
-                    const logoImg = new Image();
-                    logoImg.crossOrigin = 'anonymous';
-                    logoImg.src = getAssetUrl(data.logoUrl);
-                    await new Promise(resolve => (logoImg.onload = resolve));
-                    const ratio = Math.min(el.maxWidth / logoImg.width, el.maxHeight / logoImg.height);
-                    const w = logoImg.width * ratio;
-                    const h = logoImg.height * ratio;
-                    ctx.drawImage(logoImg, el.x - w / 2, el.y - h / 2, w, h);
+                    const logoImg = await getCachedImage(data.logoUrl);
+                    if (logoImg.width > 0) {
+                        const ratio = Math.min(el.maxWidth / logoImg.width, el.maxHeight / logoImg.height);
+                        const w = logoImg.width * ratio;
+                        const h = logoImg.height * ratio;
+                        octx.drawImage(logoImg, el.x - w / 2, el.y - h / 2, w, h);
+                    }
                 }
 
                 if (el.type === 'qr') {
-                    const qrImg = new Image();
-                    qrImg.src = qrBase64;
-                    await new Promise(resolve => (qrImg.onload = resolve));
-                    ctx.drawImage(qrImg, el.x - el.size / 2, el.y - el.size / 2, el.size, el.size);
+                    const qrImg = await getCachedImage(qrBase64);
+                    if (qrImg.width > 0) {
+                        octx.drawImage(qrImg, el.x - el.size / 2, el.y - el.size / 2, el.size, el.size);
 
-                    if (el.includeLogo && data.logoUrl) {
-                        const logoImg = new Image();
-                        logoImg.crossOrigin = 'anonymous';
-                        logoImg.src = getAssetUrl(data.logoUrl);
-                        await new Promise(resolve => (logoImg.onload = resolve));
-                        const logoSize = el.size * 0.22;
-                        const pad = el.logoPadding || 0;
-                        if (el.logoShape === 'circle') {
-                            ctx.beginPath();
-                            ctx.arc(el.x, el.y, (logoSize + pad) / 2, 0, Math.PI * 2);
-                            ctx.fillStyle = '#ffffff'; ctx.fill();
-                            ctx.save();
-                            ctx.beginPath();
-                            ctx.arc(el.x, el.y, logoSize / 2, 0, Math.PI * 2);
-                            ctx.clip();
-                            ctx.drawImage(logoImg, el.x - logoSize / 2, el.y - logoSize / 2, logoSize, logoSize);
-                            ctx.restore();
-                            ctx.beginPath();
-                            ctx.arc(el.x, el.y, (logoSize + pad) / 2, 0, Math.PI * 2);
-                            ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 2; ctx.stroke();
-                        } else {
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(el.x - (logoSize + pad) / 2, el.y - (logoSize + pad) / 2, logoSize + pad, logoSize + pad);
-                            ctx.drawImage(logoImg, el.x - logoSize / 2, el.y - logoSize / 2, logoSize, logoSize);
+                        if (el.includeLogo && data.logoUrl) {
+                            const logoImg = await getCachedImage(data.logoUrl);
+                            if (logoImg.width > 0) {
+                                const logoSize = el.size * 0.22;
+                                const pad = el.logoPadding || 0;
+                                if (el.logoShape === 'circle') {
+                                    octx.beginPath();
+                                    octx.arc(el.x, el.y, (logoSize + pad) / 2, 0, Math.PI * 2);
+                                    octx.fillStyle = '#ffffff'; octx.fill();
+                                    octx.save();
+                                    octx.beginPath();
+                                    octx.arc(el.x, el.y, logoSize / 2, 0, Math.PI * 2);
+                                    octx.clip();
+                                    octx.drawImage(logoImg, el.x - logoSize / 2, el.y - logoSize / 2, logoSize, logoSize);
+                                    octx.restore();
+                                    octx.beginPath();
+                                    octx.arc(el.x, el.y, (logoSize + pad) / 2, 0, Math.PI * 2);
+                                    octx.strokeStyle = '#e0e0e0'; octx.lineWidth = 2; octx.stroke();
+                                } else {
+                                    octx.fillStyle = '#ffffff';
+                                    octx.fillRect(el.x - (logoSize + pad) / 2, el.y - (logoSize + pad) / 2, logoSize + pad, logoSize + pad);
+                                    octx.drawImage(logoImg, el.x - logoSize / 2, el.y - logoSize / 2, logoSize, logoSize);
+                                }
+                            }
                         }
                     }
                 }
 
                 if (el.type === 'star-rating' && data.showStars) {
-                    ctx.fillStyle = (data.elementColors && data.elementColors[el.id]) || el.color;
+                    octx.fillStyle = (data.elementColors && data.elementColors[el.id]) || el.color;
                     const starSize = el.size; const spacing = 20;
                     const totalW = (starSize * el.count) + (spacing * (el.count - 1));
-                    ctx.translate(el.x - totalW / 2, el.y);
+                    octx.translate(el.x - totalW / 2, el.y);
                     for (let i = 0; i < el.count; i++) {
-                        ctx.beginPath();
+                        octx.beginPath();
                         for (let j = 0; j < 5; j++) {
-                            ctx.lineTo(
+                            octx.lineTo(
                                 Math.cos(((18 + j * 72) / 180) * Math.PI) * (starSize / 2) + (starSize / 2 + i * (starSize + spacing)),
                                 -Math.sin(((18 + j * 72) / 180) * Math.PI) * (starSize / 2)
                             );
-                            ctx.lineTo(
+                            octx.lineTo(
                                 Math.cos(((54 + j * 72) / 180) * Math.PI) * (starSize / 4) + (starSize / 2 + i * (starSize + spacing)),
                                 -Math.sin(((54 + j * 72) / 180) * Math.PI) * (starSize / 4)
                             );
                         }
-                        ctx.closePath(); ctx.fill();
+                        octx.closePath(); octx.fill();
                     }
                 }
-                ctx.restore();
+                octx.restore();
             }
+
+            if (isCancelled) return;
+
+            // Sync off-screen canvas to visible canvas in ONE shot
+            // We only resize if dimensions actually changed (performance)
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+            }
+            ctx.drawImage(offCanvas, 0, 0);
         };
         render();
+
+        return () => {
+            isCancelled = true;
+        };
     }, [data, selectedTemplate, qrBase64]);
 
     const downloadFile = (blob: Blob, filename: string) => {

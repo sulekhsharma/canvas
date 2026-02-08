@@ -60,7 +60,7 @@
                 "fontSize": 80,
                 "fontFamily": "Inter, sans-serif",
                 "align": "center",
-                "color": "#333333"
+                "color": "#000"
             },
             {
                 "id": "google-branding",
@@ -289,7 +289,8 @@
                 "fontFamily": "Inter, sans-serif",
                 "align": "left",
                 "color": "#ffffff",
-                "lineHeight": 1.4
+                "lineHeight": 1.4,
+                "maxWidth": 1880
             },
             {
                 "id": "qr-white-frame",
