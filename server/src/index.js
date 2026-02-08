@@ -15,8 +15,16 @@ import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
+import sharp from 'sharp';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Ensure uploads directory exists
+const uploadsDir = join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 dotenv.config();
 
@@ -27,6 +35,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Serve Uploads
+app.use('/uploads', express.static(uploadsDir));
 
 app.use((req, res, next) => {
     const start = Date.now();
@@ -504,6 +515,95 @@ app.get('/api/admin/logs', authenticateToken, authenticateAdmin, (req, res) => {
     }
 });
 
+// --- ASSET MANAGEMENT ---
+
+const assetStorage = multer.memoryStorage();
+const assetUpload = multer({
+    storage: assetStorage,
+    limits: { fileSize: 1024 * 1024 }, // 1MB limit
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed!'), false);
+        }
+    }
+});
+
+app.post('/api/upload-asset', authenticateToken, assetUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        const userId = req.user.id;
+
+        // Check Quota
+        const usage = db.prepare('SELECT SUM(size) as total FROM assets WHERE user_id = ?').get(userId);
+        const currentUsage = usage.total || 0;
+        if (currentUsage + req.file.size > 100 * 1024 * 1024) { // 100MB Limit
+            return res.status(400).json({ error: 'Storage quota exceeded (100MB limit)' });
+        }
+
+        // Prepare User Directory
+        const userDir = join(uploadsDir, userId, 'assets');
+        if (!fs.existsSync(userDir)) {
+            fs.mkdirSync(userDir, { recursive: true });
+        }
+
+        // Process & Compress Image
+        const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}.webp`;
+        const filepath = join(userDir, filename);
+
+        await sharp(req.file.buffer)
+            .resize({ width: 800, withoutEnlargement: true }) // Reasonable max width
+            .webp({ quality: 80 }) // 80% quality WebP
+            .toFile(filepath);
+
+        const stats = fs.statSync(filepath);
+        const fileUrl = `/uploads/${userId}/assets/${filename}`;
+
+        // Save to DB
+        const assetId = uuidv4();
+        db.prepare(`
+            INSERT INTO assets (id, user_id, filename, original_name, path, size, mime_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(assetId, userId, filename, req.file.originalname, fileUrl, stats.size, 'image/webp');
+
+        res.json({
+            id: assetId,
+            url: fileUrl,
+            filename: filename,
+            size: stats.size
+        });
+
+    } catch (error) {
+        console.error('Asset Upload Error:', error);
+        res.status(500).json({ error: error.message || 'Failed to upload asset' });
+    }
+});
+
+app.get('/api/assets', authenticateToken, (req, res) => {
+    try {
+        const assets = db.prepare('SELECT * FROM assets WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+        res.json(assets);
+    } catch (error) {
+        console.error('Fetch Assets Error:', error);
+        res.status(500).json({ error: 'Failed to fetch assets' });
+    }
+});
+
+// Helper for API Users
+const getOrCreateApiUser = (email) => {
+    if (!email) return null;
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (!user) {
+        const id = uuidv4();
+        const password = bcrypt.hashSync(uuidv4(), 10); // Random password
+        db.prepare('INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)').run(id, email, password, 'API User', 'no-plan');
+        user = { id, email, role: 'no-plan' };
+    }
+    return user;
+};
+
 // --- DESIGN MANAGEMENT ---
 
 app.get('/api/designs', authenticateToken, (req, res) => {
@@ -767,6 +867,14 @@ app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
 
         // Merge back normalized params
         params = { ...params, ...normalizedParams };
+
+        // Identify API User
+        if (!req.user && params.email) {
+            const apiUser = getOrCreateApiUser(params.email);
+            if (apiUser) {
+                req.user = apiUser; // Inject into request so logging middleware picks it up
+            }
+        }
 
         // Load Template
         let template = null;

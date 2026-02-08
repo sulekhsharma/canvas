@@ -55,28 +55,33 @@ export const DesignBuilder: React.FC<{
     const [backgrounds, setBackgrounds] = useState<any[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showBgModal, setShowBgModal] = useState(false);
+    const [myAssets, setMyAssets] = useState<any[]>([]);
+    const [showAssetModal, setShowAssetModal] = useState(false);
     const imageCache = useRef<Record<string, HTMLImageElement>>({});
 
-    // Helper to get cached image or load it
-    const getCachedImage = (url: string): Promise<HTMLImageElement> => {
-        const fullUrl = getAssetUrl(url);
-        if (imageCache.current[fullUrl] && imageCache.current[fullUrl].complete) {
-            return Promise.resolve(imageCache.current[fullUrl]);
+    useEffect(() => {
+        if (token) {
+            fetch(`${API_BASE}/assets`, { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) setMyAssets(data);
+                })
+                .catch(console.error);
         }
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = fullUrl;
-            img.onload = () => {
-                imageCache.current[fullUrl] = img;
-                resolve(img);
-            };
-            img.onerror = () => {
-                // Return an empty transparent image if load fails
-                const empty = new Image();
-                resolve(empty);
-            };
+    }, [token]);
+
+    // Helper to get cached image or load it
+    const getCachedImage = async (src: string): Promise<HTMLImageElement> => {
+        if (imageCache.current[src]) return imageCache.current[src];
+        const img = new Image();
+        img.src = getAssetUrl(src);
+        img.crossOrigin = 'anonymous'; // Important for canvas export
+        await new Promise((resolve, reject) => {
+            img.onload = () => resolve(img);
+            img.onerror = reject;
         });
+        imageCache.current[src] = img;
+        return img;
     };
 
     useEffect(() => {
@@ -104,15 +109,39 @@ export const DesignBuilder: React.FC<{
         setHasUnsavedChanges(true);
     };
 
-    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setData(prev => ({ ...prev, logoUrl: reader.result as string }));
-                setHasUnsavedChanges(true);
-            };
-            reader.readAsDataURL(file);
+            if (file.size > 1024 * 1024) {
+                alert('File size must be under 1MB');
+                return;
+            }
+            if (!file.type.startsWith('image/')) {
+                alert('File must be an image');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch(`${API_BASE}/upload-asset`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const asset = await res.json();
+                if (res.ok) {
+                    setData(prev => ({ ...prev, logoUrl: asset.url }));
+                    setHasUnsavedChanges(true);
+                    setMyAssets(prev => [asset, ...prev]);
+                } else {
+                    alert(asset.error || 'Upload failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Upload failed');
+            }
         }
     };
 
@@ -413,6 +442,17 @@ export const DesignBuilder: React.FC<{
                             </label>
                             <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                         </div>
+                        <button
+                            onClick={() => setShowAssetModal(true)}
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                padding: '0.7rem', background: '#f1f5f9', border: '1px solid #e2e8f0',
+                                borderRadius: '10px', fontSize: '0.8rem', color: '#475569', cursor: 'pointer',
+                                fontWeight: 600, marginTop: '0.5rem', width: '100%'
+                            }}
+                        >
+                            <ImageIcon size={18} /> My Assets
+                        </button>
                     </div>
                     <div className="input-group" style={{ marginTop: '1rem' }}>
                         <label>Background Decoration</label>
@@ -612,6 +652,42 @@ export const DesignBuilder: React.FC<{
                                             )}
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {showAssetModal && (
+                    <div className="modal-overlay" style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(8px)',
+                        zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem'
+                    }}>
+                        <div className="modal-content" style={{
+                            background: 'white', borderRadius: '24px', width: '100%', maxWidth: '800px', maxHeight: '80vh',
+                            display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}>
+                            <div className="modal-header" style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1e293b' }}>My Assets</h2>
+                                    <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.9rem' }}>Your uploaded logos and images</p>
+                                </div>
+                                <button onClick={() => setShowAssetModal(false)} style={{ background: '#f1f5f9', border: 'none', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+                            </div>
+                            <div className="modal-body" style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1rem' }}>
+                                    {myAssets.map(asset => (
+                                        <div key={asset.id} onClick={() => { setData(prev => ({ ...prev, logoUrl: asset.url })); setHasUnsavedChanges(true); setShowAssetModal(false); }}
+                                            style={{
+                                                border: data.logoUrl === asset.url ? '3px solid #4f46e5' : '1px solid #e2e8f0',
+                                                borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', background: 'white',
+                                                transition: 'all 0.2s', position: 'relative', aspectRatio: '1/1'
+                                            }}
+                                        >
+                                            <img src={getAssetUrl(asset.url)} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '0.5rem' }} />
+                                        </div>
+                                    ))}
+                                    {myAssets.length === 0 && <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#94a3b8' }}>No assets found. Upload a logo to see it here.</p>}
                                 </div>
                             </div>
                         </div>

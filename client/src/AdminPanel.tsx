@@ -962,6 +962,14 @@ function LogDetailsModal({ log, onClose }: { log: AdminLog, onClose: () => void 
 function BusinessDetailsModal({ business, onClose }: { business: BusinessEntry, onClose: () => void }) {
     const details = business.details || {};
 
+    const apiBase = import.meta.env.VITE_API_BASE || '/api';
+    const serverBase = apiBase.replace(/\/api$/, '');
+    const getAssetUrl = (url: string) => {
+        if (!url) return '';
+        if (url.startsWith('data:')) return url;
+        return `${serverBase}${url}`;
+    };
+
     // Define high priority fields to show first
     const primaryFields = [
         { label: 'Business Name', value: business.businessName },
@@ -983,7 +991,18 @@ function BusinessDetailsModal({ business, onClose }: { business: BusinessEntry, 
                     <div style={{ padding: '0.5rem', background: '#dbeafe', color: '#2563eb', borderRadius: '8px' }}>
                         <FileText size={24} />
                     </div>
-                    <h3 style={{ margin: 0 }}>Business Record Details</h3>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ margin: 0 }}>Business Record Details</h3>
+                        {details.logoUrl && (
+                            <div style={{ marginTop: '0.5rem' }}>
+                                <img
+                                    src={getAssetUrl(details.logoUrl)}
+                                    alt="Business Logo"
+                                    style={{ height: '60px', borderRadius: '4px', objectFit: 'contain', border: '1px solid #e2e8f0' }}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="log-info-grid">

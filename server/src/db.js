@@ -63,6 +63,18 @@ db.exec(`
     response_body TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS assets (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    filename TEXT,
+    original_name TEXT,
+    path TEXT,
+    size INTEGER,
+    mime_type TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
 
 // Migration function to ensure schema is up to date
