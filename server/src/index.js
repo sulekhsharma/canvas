@@ -351,8 +351,9 @@ async function renderToCanvas(designData, template) {
             ctx.beginPath();
             ctx.roundRect(x, y, w, h, radius);
 
-            if (el.color) {
-                ctx.fillStyle = el.color;
+            let color = (designData.elementColors && designData.elementColors[el.id]) || el.color;
+            if (color) {
+                ctx.fillStyle = color;
                 ctx.fill();
             }
             if (el.strokeColor && el.borderWidth) {
@@ -371,9 +372,7 @@ async function renderToCanvas(designData, template) {
             if (el.rotation) ctx.rotate((el.rotation * Math.PI) / 180);
 
             // Dynamic Color Injection
-            ctx.fillStyle = el.color; // Template default
-            if (el.field === 'hookText' && designData.primaryColor) ctx.fillStyle = designData.primaryColor;
-            if (el.field === 'ctaText' && designData.secondaryColor) ctx.fillStyle = designData.secondaryColor;
+            ctx.fillStyle = (designData.elementColors && designData.elementColors[el.id]) || el.color; // Template default
 
             ctx.font = `${el.fontWeight || 'normal'} ${el.fontSize}px Arial`;
             ctx.textAlign = el.align;
@@ -401,7 +400,7 @@ async function renderToCanvas(designData, template) {
                 margin: 1,
                 width: el.size,
                 color: {
-                    dark: designData.primaryColor || '#000000',
+                    dark: (designData.elementColors && designData.elementColors[el.id]) || (designData.primaryColor || '#000000'),
                     light: '#ffffff'
                 }
             });
@@ -434,7 +433,7 @@ async function renderToCanvas(designData, template) {
         }
 
         if (el.type === 'star-rating' && designData.showStars) {
-            ctx.fillStyle = designData.primaryColor || el.color;
+            ctx.fillStyle = (designData.elementColors && designData.elementColors[el.id]) || el.color;
             const starSize = el.size; const spacing = 20;
             const totalW = (starSize * el.count) + (spacing * (el.count - 1));
             ctx.translate(el.x - totalW / 2, el.y);

@@ -101,8 +101,9 @@ export interface DesignData {
     hookText?: string;
     showStars: boolean;
     showSocials: boolean;
-    primaryColor: string; // New
-    secondaryColor: string; // New
+    primaryColor: string; // Keep for legacy
+    secondaryColor: string; // Keep for legacy
+    elementColors?: Record<string, string>; // Dynamic colors for template elements
     themeColor?: string;
     backgroundImageUrl?: string;
 }

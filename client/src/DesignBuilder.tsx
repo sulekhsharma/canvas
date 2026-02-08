@@ -11,17 +11,34 @@ export const DesignBuilder: React.FC<{
     initialData?: DesignData;
     token: string;
 }> = ({ initialTemplate, onBack, initialData, token }) => {
-    const [data, setData] = useState<DesignData>(initialData || {
-        id: undefined,
-        gmbUrl: 'https://g.page/r/YOUR_LINK_HERE',
-        businessName: '',
-        ctaText: '',
-        hookText: '',
-        showStars: true,
-        showSocials: false,
-        physicalAddress: '',
-        primaryColor: '#000000',
-        secondaryColor: '#4285F4'
+    const [data, setData] = useState<DesignData>(() => {
+        const defaultColors = initialTemplate.elements.reduce((acc, el) => {
+            if ('color' in el && el.color) acc[el.id] = el.color;
+            if (el.type === 'qr') acc[el.id] = '#000000';
+            if (el.type === 'star-rating') acc[el.id] = (el as any).color || '#FFC107';
+            return acc;
+        }, {} as Record<string, string>);
+
+        if (initialData) {
+            return {
+                ...initialData,
+                elementColors: initialData.elementColors || defaultColors
+            };
+        }
+
+        return {
+            id: undefined,
+            gmbUrl: 'https://g.page/r/YOUR_LINK_HERE',
+            businessName: '',
+            ctaText: '',
+            hookText: '',
+            showStars: true,
+            showSocials: false,
+            physicalAddress: '',
+            primaryColor: '#000000',
+            secondaryColor: '#4285F4',
+            elementColors: defaultColors
+        };
     });
 
     const [selectedTemplate] = useState<DesignTemplate>(initialTemplate);
@@ -35,6 +52,17 @@ export const DesignBuilder: React.FC<{
         const { name, value, type } = e.target as HTMLInputElement;
         const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
         setData(prev => ({ ...prev, [name]: val }));
+        setHasUnsavedChanges(true);
+    };
+
+    const handleColorChange = (elementId: string, color: string) => {
+        setData(prev => ({
+            ...prev,
+            elementColors: {
+                ...(prev.elementColors || {}),
+                [elementId]: color
+            }
+        }));
         setHasUnsavedChanges(true);
     };
 
@@ -94,13 +122,16 @@ export const DesignBuilder: React.FC<{
 
     useEffect(() => {
         const generateQR = async () => {
+            const qrElement = selectedTemplate.elements.find(el => el.type === 'qr');
+            const qrColor = (data.elementColors && qrElement) ? data.elementColors[qrElement.id] : (data.primaryColor || '#000000');
+
             try {
                 const url = await QRCode.toDataURL(data.gmbUrl || 'https://g.page/r/', {
                     errorCorrectionLevel: 'H',
                     margin: 1,
                     width: 800,
                     color: {
-                        dark: data.primaryColor || '#000000',
+                        dark: qrColor,
                         light: '#ffffff'
                     }
                 });
@@ -110,7 +141,7 @@ export const DesignBuilder: React.FC<{
             }
         };
         generateQR();
-    }, [data.gmbUrl, data.primaryColor]);
+    }, [data.gmbUrl, data.primaryColor, data.elementColors, selectedTemplate.elements]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -151,11 +182,7 @@ export const DesignBuilder: React.FC<{
                     ctx.quadraticCurveTo(x, y, x + radius, y);
                     ctx.closePath();
 
-                    let color = el.color;
-                    if (el.id?.includes('search-bar')) {
-                        // Example mapping color to secondary if needed, or stick to el.color
-                    }
-
+                    let color = (data.elementColors && data.elementColors[el.id]) || el.color;
                     if (color) { ctx.fillStyle = color; ctx.fill(); }
                     if (el.strokeColor && el.borderWidth) { ctx.strokeStyle = el.strokeColor; ctx.lineWidth = el.borderWidth; ctx.stroke(); }
                 }
@@ -168,10 +195,7 @@ export const DesignBuilder: React.FC<{
                     if (el.rotation) ctx.rotate((el.rotation * Math.PI) / 180);
 
                     // DYNAMIC COLORS
-                    let color = el.color;
-                    if (el.field === 'hookText') color = data.primaryColor;
-                    if (el.field === 'ctaText') color = data.secondaryColor;
-                    if (el.id === 'search-bar-text') color = data.primaryColor;
+                    let color = (data.elementColors && data.elementColors[el.id]) || el.color;
 
                     ctx.fillStyle = color;
                     ctx.font = `${el.fontWeight || 'normal'} ${el.fontSize}px Inter, sans-serif`;
@@ -228,7 +252,7 @@ export const DesignBuilder: React.FC<{
                 }
 
                 if (el.type === 'star-rating' && data.showStars) {
-                    ctx.fillStyle = data.primaryColor || el.color;
+                    ctx.fillStyle = (data.elementColors && data.elementColors[el.id]) || el.color;
                     const starSize = el.size; const spacing = 20;
                     const totalW = (starSize * el.count) + (spacing * (el.count - 1));
                     ctx.translate(el.x - totalW / 2, el.y);
@@ -290,21 +314,14 @@ export const DesignBuilder: React.FC<{
                 </button>
 
                 <section className="form-section">
-                    <h3>Design Colors</h3>
-                    <div className="color-grid">
-                        <div className="input-group">
-                            <label>Primary Color</label>
-                            <div className="color-picker-wrapper">
-                                <input type="color" name="primaryColor" value={data.primaryColor} onChange={handleChange} />
-                                <span>{data.primaryColor}</span>
-                            </div>
-                        </div>
-                        <div className="input-group">
-                            <label>Secondary Color</label>
-                            <div className="color-picker-wrapper">
-                                <input type="color" name="secondaryColor" value={data.secondaryColor} onChange={handleChange} />
-                                <span>{data.secondaryColor}</span>
-                            </div>
+                    <h3>Assets & Identity</h3>
+                    <div className="input-group">
+                        <label>Brand Logo</label>
+                        <div className="file-upload">
+                            <label htmlFor="logo-upload" className="file-label">
+                                <ImageIcon size={18} /> {data.logoUrl ? 'Change Asset' : 'Upload Asset'}
+                            </label>
+                            <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                         </div>
                     </div>
                     <div className="input-group" style={{ marginTop: '1rem' }}>
@@ -334,7 +351,7 @@ export const DesignBuilder: React.FC<{
                     </div>
                     <div className="input-group">
                         <label>Business Name</label>
-                        <input name="businessName" value={data.businessName} onChange={handleChange} placeholder="Dental Clinic..." />
+                        <input name="businessName" value={data.businessName} onChange={handleChange} placeholder="Your Business Name" />
                     </div>
                     <div className="input-group">
                         <label>Emotional Hook</label>
@@ -343,15 +360,6 @@ export const DesignBuilder: React.FC<{
                     <div className="input-group">
                         <label>CTA Subtext</label>
                         <textarea name="ctaText" value={data.ctaText} onChange={handleChange} rows={2} placeholder="Impressed with our services?" />
-                    </div>
-                    <div className="input-group">
-                        <label>Brand Logo</label>
-                        <div className="file-upload">
-                            <label htmlFor="logo-upload" className="file-label">
-                                <ImageIcon size={18} /> {data.logoUrl ? 'Change Asset' : 'Upload Asset'}
-                            </label>
-                            <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                        </div>
                     </div>
                 </section>
 
@@ -378,6 +386,36 @@ export const DesignBuilder: React.FC<{
             </aside>
 
             <main className="preview-area">
+                <div className="toolbar-header">
+                    <div className="toolbar-label">Quick Colors</div>
+                    <div className="dynamic-colors-bar">
+                        {selectedTemplate.elements
+                            .filter(el => ('color' in el && el.color) || el.type === 'qr' || el.type === 'star-rating')
+                            .map(el => {
+                                const field = (el as any).field;
+                                const label = field
+                                    ? field.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())
+                                    : el.id.replace(/[-_]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+
+                                return (
+                                    <div className="toolbar-color-item" key={el.id} title={label}>
+                                        <div className="color-swatch-wrapper">
+                                            <input
+                                                type="color"
+                                                value={(data.elementColors && data.elementColors[el.id]) || (el as any).color || '#000000'}
+                                                onChange={(e) => handleColorChange(el.id, e.target.value)}
+                                            />
+                                            <div
+                                                className="color-swatch-preview"
+                                                style={{ backgroundColor: (data.elementColors && data.elementColors[el.id]) || (el as any).color || '#000000' }}
+                                            />
+                                        </div>
+                                        <span className="color-label-mini">{label}</span>
+                                    </div>
+                                );
+                            })}
+                    </div>
+                </div>
                 <div className="canvas-wrapper">
                     <canvas ref={canvasRef} />
                 </div>
@@ -411,9 +449,19 @@ export const DesignBuilder: React.FC<{
         .download-btn.secondary { background: #e2e8f0; color: #475569; }
         .save-hint { font-size: 0.7rem; color: #ef4444; font-weight: 500; text-align: center; margin: 0; }
 
-        .preview-area { padding: 3rem; display: flex; align-items: center; justify-content: center; background: #cbd5e1; overflow: auto; }
-        .canvas-wrapper { background: white; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); line-height: 0; }
-        canvas { max-width: 100%; max-height: 85vh; object-fit: contain; }
+        .preview-area { padding: 3rem; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: #cbd5e1; overflow: auto; position: relative; }
+        .toolbar-header { width: 100%; max-width: 1200px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 0.75rem 1.5rem; border-radius: 16px; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.5); position: sticky; top: 0; z-index: 10; }
+        .toolbar-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; border-right: 1px solid #e2e8f0; padding-right: 1.5rem; white-space: nowrap; }
+        .dynamic-colors-bar { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 4px; flex: 1; scrollbar-width: thin; }
+        .toolbar-color-item { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 60px; }
+        .color-swatch-wrapper { position: relative; width: 32px; height: 32px; cursor: pointer; }
+        .color-swatch-wrapper input[type="color"] { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
+        .color-swatch-preview { width: 100%; height: 100%; border-radius: 8px; border: 2px solid white; box-shadow: 0 0 0 1px #e2e8f0; pointer-events: none; transition: transform 0.2s; }
+        .toolbar-color-item:hover .color-swatch-preview { transform: scale(1.1); }
+        .color-label-mini { font-size: 0.6rem; color: #475569; font-weight: 600; white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+
+        .canvas-wrapper { background: white; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.3); line-height: 0; border-radius: 4px; overflow: hidden; }
+        canvas { max-width: 100%; max-height: 75vh; object-fit: contain; }
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .hidden { display: none; }
