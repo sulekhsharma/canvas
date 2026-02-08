@@ -316,9 +316,28 @@ app.delete('/api/admin/templates/:id', authenticateToken, authenticateAdmin, (re
 // API Logs
 app.get('/api/admin/logs', authenticateToken, authenticateAdmin, (req, res) => {
     try {
-        const logs = db.prepare('SELECT * FROM api_logs ORDER BY timestamp DESC LIMIT 200').all();
-        res.json(logs);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = (page - 1) * limit;
+
+        const totalRows = db.prepare('SELECT COUNT(*) as count FROM api_logs').get().count;
+        const logs = db.prepare(`
+            SELECT * FROM api_logs 
+            ORDER BY timestamp DESC 
+            LIMIT ? OFFSET ?
+        `).all(limit, offset);
+
+        res.json({
+            logs,
+            pagination: {
+                total: totalRows,
+                page,
+                limit,
+                pages: Math.ceil(totalRows / limit)
+            }
+        });
     } catch (e) {
+        console.error('Failed to fetch logs:', e);
         res.status(500).json({ error: 'Failed to fetch logs' });
     }
 });

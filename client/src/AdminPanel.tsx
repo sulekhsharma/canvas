@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X } from 'lucide-react';
+import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { User, DesignData } from './types';
 
 interface AdminPanelProps {
@@ -36,7 +36,7 @@ interface AdminLog {
 }
 
 export function AdminPanel({ token, onClose }: AdminPanelProps) {
-    const [view, setView] = useState<'users' | 'designs' | 'templates' | 'logs'>('users');
+    const [view, setView] = useState<'users' | 'designs' | 'templates' | 'logs' | 'business'>('users');
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [designs, setDesigns] = useState<AdminDesign[]>([]);
     const [templates, setTemplates] = useState<any[]>([]);
@@ -44,6 +44,10 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Logs Pagination
+    const [logsPage, setLogsPage] = useState(1);
+    const [logsPagination, setLogsPagination] = useState({ total: 0, pages: 1, limit: 50 });
 
     // Modal State
     const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -54,7 +58,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
 
     useEffect(() => {
         fetchData();
-    }, [view]);
+    }, [view, logsPage]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -65,7 +69,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 const res = await fetch(`${apiBase}/admin/users`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch users');
                 setUsers(await res.json());
-            } else if (view === 'designs') {
+            } else if (view === 'designs' || view === 'business') {
                 const res = await fetch(`${apiBase}/admin/designs`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch designs');
                 setDesigns(await res.json());
@@ -74,9 +78,11 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 if (!res.ok) throw new Error('Failed to fetch templates');
                 setTemplates(await res.json());
             } else if (view === 'logs') {
-                const res = await fetch(`${apiBase}/admin/logs`, { headers });
+                const res = await fetch(`${apiBase}/admin/logs?page=${logsPage}&limit=${logsPagination.limit}`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch logs');
-                setLogs(await res.json());
+                const data = await res.json();
+                setLogs(data.logs);
+                setLogsPagination(data.pagination);
             }
         } catch (err: any) {
             setError(err.message);
@@ -204,6 +210,12 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     <FileText size={18} /> Templates
                 </button>
                 <button
+                    className={view === 'business' ? 'active' : ''}
+                    onClick={() => setView('business')}
+                >
+                    <Briefcase size={18} /> Business Data
+                </button>
+                <button
                     className={view === 'logs' ? 'active' : ''}
                     onClick={() => setView('logs')}
                 >
@@ -325,6 +337,43 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     </div>
                 )}
 
+                {!loading && !error && view === 'business' && (
+                    <div className="designs-admin">
+                        <div className="table-header">
+                            <h3>Business Information Log</h3>
+                            <p>Data provided by users during QR generation</p>
+                        </div>
+                        <div className="table-responsive">
+                            <table className="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Business Name</th>
+                                        <th>GMB URL</th>
+                                        <th>Hook Text</th>
+                                        <th>Address</th>
+                                        <th>User</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {designs.map(d => (
+                                        <tr key={d.id}>
+                                            <td>{d.data.businessName || '-'}</td>
+                                            <td><code style={{ fontSize: '0.7rem' }}>{d.data.gmbUrl || '-'}</code></td>
+                                            <td>{d.data.hookText || '-'}</td>
+                                            <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {d.data.physicalAddress || '-'}
+                                            </td>
+                                            <td>{d.user_email}</td>
+                                            <td>{new Date(d.updated_at).toLocaleDateString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
                 {!loading && !error && view === 'logs' && (
                     <div className="logs-admin">
                         <div className="table-responsive">
@@ -357,6 +406,28 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                        <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <div className="pagination-info" style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                Showing <b>{logs.length}</b> of <b>{logsPagination.total}</b> logs
+                            </div>
+                            <div className="pagination-buttons" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <button
+                                    disabled={logsPage === 1}
+                                    onClick={() => setLogsPage(p => p - 1)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', border: '1px solid #e2e8f0', background: logsPage === 1 ? '#f8fafc' : 'white', cursor: logsPage === 1 ? 'not-allowed' : 'pointer', borderRadius: '6px', fontSize: '0.85rem' }}
+                                >
+                                    <ChevronLeft size={16} /> Prev
+                                </button>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>Page {logsPage} of {logsPagination.pages || 1}</span>
+                                <button
+                                    disabled={logsPage >= logsPagination.pages}
+                                    onClick={() => setLogsPage(p => p + 1)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', border: '1px solid #e2e8f0', background: logsPage >= logsPagination.pages ? '#f8fafc' : 'white', cursor: logsPage >= logsPagination.pages ? 'not-allowed' : 'pointer', borderRadius: '6px', fontSize: '0.85rem' }}
+                                >
+                                    Next <ChevronRight size={16} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -457,6 +528,11 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     color: white;
                     border-color: #2563eb;
                 }
+                .admin-tabs button:hover:not(.active) { background: #f1f5f9; }
+                
+                .table-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; border-top-left-radius: 12px; border-top-right-radius: 12px; background: white; }
+                .table-header h3 { margin: 0; font-size: 1.1rem; color: #1e293b; }
+                .table-header p { margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #64748b; }
 
                 .admin-table {
                     width: 100%;
