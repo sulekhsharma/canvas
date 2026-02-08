@@ -262,6 +262,73 @@ app.get('/api/admin/designs', authenticateToken, authenticateAdmin, (req, res) =
     }
 });
 
+app.get('/api/admin/business-data', authenticateToken, authenticateAdmin, (req, res) => {
+    try {
+        // 1. Get from designs table
+        const designs = db.prepare(`
+            SELECT d.id, d.updated_at, u.email as user_email, d.data
+            FROM designs d 
+            LEFT JOIN users u ON d.user_id = u.id 
+            ORDER BY d.updated_at DESC
+        `).all();
+
+        const designEntries = designs.map(d => {
+            let parsedData = {};
+            try { parsedData = JSON.parse(d.data); } catch (e) { }
+            return {
+                id: d.id,
+                businessName: parsedData.businessName || parsedData.business_name || '-',
+                gmbUrl: parsedData.gmbUrl || '-',
+                hookText: parsedData.hookText || '-',
+                physicalAddress: parsedData.physicalAddress || parsedData.business_address || '-',
+                user_email: d.user_email || 'guest',
+                updated_at: d.updated_at,
+                source: 'Panel'
+            };
+        });
+
+        // 2. Get from API logs (/api/generate-qr)
+        const logs = db.prepare(`
+            SELECT id, user_email, request_body, timestamp as updated_at
+            FROM api_logs
+            WHERE url LIKE '%/api/generate-qr%' AND status_code < 400
+            ORDER BY timestamp DESC
+        `).all();
+
+        const logEntries = logs.map(l => {
+            let parsedData = {};
+            try {
+                parsedData = JSON.parse(l.request_body);
+                // Handle nested 'data' field often sent via multipart
+                if (parsedData.data && typeof parsedData.data === 'string') {
+                    try { parsedData = { ...parsedData, ...JSON.parse(parsedData.data) }; } catch (e) { }
+                }
+            } catch (e) { }
+
+            return {
+                id: `log-${l.id}`,
+                businessName: parsedData.businessName || parsedData.business_name || parsedData.businessname || '-',
+                gmbUrl: parsedData.gmbUrl || '-',
+                hookText: parsedData.hookText || '-',
+                physicalAddress: parsedData.physicalAddress || parsedData.businessAddress || parsedData.business_address || '-',
+                user_email: l.user_email || 'anonymous',
+                updated_at: l.updated_at,
+                source: 'API'
+            };
+        });
+
+        // Combine and Sort
+        const combined = [...designEntries, ...logEntries]
+            .filter(e => e.businessName !== '-' || e.gmbUrl !== '-') // Filter out empty tests
+            .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+
+        res.json(combined);
+    } catch (e) {
+        console.error('Unified business data error:', e);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
 app.post('/api/admin/sync', authenticateToken, authenticateAdmin, (req, res) => {
     try {
         console.log('Manual database sync requested...');

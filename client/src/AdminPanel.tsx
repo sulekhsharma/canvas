@@ -35,10 +35,22 @@ interface AdminLog {
     timestamp: string;
 }
 
+interface BusinessEntry {
+    id: string;
+    businessName: string;
+    gmbUrl: string;
+    hookText: string;
+    physicalAddress: string;
+    user_email: string;
+    updated_at: string;
+    source: 'Panel' | 'API';
+}
+
 export function AdminPanel({ token, onClose }: AdminPanelProps) {
     const [view, setView] = useState<'users' | 'designs' | 'templates' | 'logs' | 'business'>('users');
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [designs, setDesigns] = useState<AdminDesign[]>([]);
+    const [businessData, setBusinessData] = useState<BusinessEntry[]>([]);
     const [templates, setTemplates] = useState<any[]>([]);
     const [logs, setLogs] = useState<AdminLog[]>([]);
     const [loading, setLoading] = useState(false);
@@ -73,10 +85,14 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 const res = await fetch(`${apiBase}/admin/users`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch users');
                 setUsers(await res.json());
-            } else if (view === 'designs' || view === 'business') {
+            } else if (view === 'designs') {
                 const res = await fetch(`${apiBase}/admin/designs`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch designs');
                 setDesigns(await res.json());
+            } else if (view === 'business') {
+                const res = await fetch(`${apiBase}/admin/business-data`, { headers });
+                if (!res.ok) throw new Error('Failed to fetch business data');
+                setBusinessData(await res.json());
             } else if (view === 'templates') {
                 const res = await fetch(`${apiBase}/admin/templates`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch templates');
@@ -345,28 +361,39 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     <div className="designs-admin">
                         <div className="table-header">
                             <h3>Business Information Log</h3>
-                            <p>Data provided by users during QR generation</p>
+                            <p>Combined data from saved designs and direct API generations</p>
                         </div>
                         <div className="table-responsive">
                             <table className="admin-table">
                                 <thead>
                                     <tr>
-                                        <th>Business Name</th>
+                                        <th>Business Detail</th>
                                         <th>GMB URL</th>
-                                        <th>Hook Text</th>
-                                        <th>Address</th>
+                                        <th>Source</th>
                                         <th>User</th>
                                         <th>Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {designs.map(d => (
+                                    {businessData.map(d => (
                                         <tr key={d.id}>
-                                            <td>{d.data.businessName || '-'}</td>
-                                            <td><code style={{ fontSize: '0.7rem' }}>{d.data.gmbUrl || '-'}</code></td>
-                                            <td>{d.data.hookText || '-'}</td>
-                                            <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {d.data.physicalAddress || '-'}
+                                            <td title={d.physicalAddress}>
+                                                <div style={{ fontWeight: 600, color: '#1e293b' }}>{d.businessName}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{d.physicalAddress}</div>
+                                            </td>
+                                            <td><code style={{ fontSize: '0.7rem' }}>{d.gmbUrl}</code></td>
+                                            <td>
+                                                <span style={{
+                                                    padding: '0.2rem 0.5rem',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 800,
+                                                    background: d.source === 'API' ? '#ecfeff' : '#f5f3ff',
+                                                    color: d.source === 'API' ? '#0891b2' : '#5b21b6',
+                                                    border: `1px solid ${d.source === 'API' ? '#cffafe' : '#ddd6fe'}`
+                                                }}>
+                                                    {d.source}
+                                                </span>
                                             </td>
                                             <td>{d.user_email}</td>
                                             <td>{new Date(d.updated_at).toLocaleDateString()}</td>
