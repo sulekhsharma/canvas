@@ -509,18 +509,14 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                                     border: '1px solid #e2e8f0',
                                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                                 }}>
-                                    <div style={{ position: 'relative', paddingTop: '56.25%', background: '#eee' }}>
+                                    <div style={{ position: 'relative', paddingTop: '100%', background: '#f8fafc' }}>
                                         <img
                                             src={getAssetUrl(bg.url)}
                                             alt={bg.name}
-                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
                                         />
                                     </div>
-                                    <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{bg.name}</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{bg.category}</div>
-                                        </div>
+                                    <div style={{ padding: '0.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                                         <button
                                             onClick={() => handleDeleteBackground(bg.id)}
                                             style={{ color: '#ef4444', background: '#fef2f2', border: 'none', padding: '0.4rem', borderRadius: '4px', cursor: 'pointer' }}

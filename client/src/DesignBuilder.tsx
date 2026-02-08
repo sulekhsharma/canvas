@@ -495,7 +495,7 @@ export const DesignBuilder: React.FC<{
                                             justifyContent: 'center',
                                             background: '#f8fafc',
                                             cursor: 'pointer',
-                                            minHeight: '140px',
+                                            aspectRatio: '1/1',
                                             transition: 'all 0.2s'
                                         }}
                                     >
@@ -518,15 +518,11 @@ export const DesignBuilder: React.FC<{
                                                 boxShadow: data.backgroundImageUrl === bg.url ? '0 10px 15px -3px rgba(79, 70, 229, 0.2)' : 'none'
                                             }}
                                         >
-                                            <div style={{ paddingBottom: '75%', position: 'relative', background: '#f1f5f9' }}>
+                                            <div style={{ paddingBottom: '100%', position: 'relative', background: '#f8fafc' }}>
                                                 <img
                                                     src={getAssetUrl(bg.url)}
-                                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
                                                 />
-                                            </div>
-                                            <div style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bg.name}</div>
-                                                <div style={{ fontSize: '0.65rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{bg.category}</div>
                                             </div>
                                             {data.backgroundImageUrl === bg.url && (
                                                 <div style={{
