@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X, Briefcase, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X, Briefcase, ChevronLeft, ChevronRight, Search, Image, Upload } from 'lucide-react';
 import type { User, DesignData } from './types';
 
 interface AdminPanelProps {
@@ -47,15 +47,17 @@ interface BusinessEntry {
 }
 
 export function AdminPanel({ token, onClose }: AdminPanelProps) {
-    const [view, setView] = useState<'users' | 'designs' | 'templates' | 'logs' | 'business'>('users');
+    const [view, setView] = useState<'users' | 'designs' | 'templates' | 'logs' | 'business' | 'backgrounds'>('users');
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [designs, setDesigns] = useState<AdminDesign[]>([]);
     const [businessData, setBusinessData] = useState<BusinessEntry[]>([]);
     const [templates, setTemplates] = useState<any[]>([]);
+    const [backgrounds, setBackgrounds] = useState<any[]>([]);
     const [logs, setLogs] = useState<AdminLog[]>([]);
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [uploadingBg, setUploadingBg] = useState(false);
 
     // Logs Pagination & Filter
     const [logsPage, setLogsPage] = useState(1);
@@ -68,6 +70,12 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
     const [selectedLog, setSelectedLog] = useState<AdminLog | null>(null);
 
     const apiBase = import.meta.env.VITE_API_BASE || '/api';
+    const serverBase = apiBase.replace(/\/api$/, '');
+    const getAssetUrl = (url: string) => {
+        if (!url) return '';
+        if (url.startsWith('data:')) return url;
+        return `${serverBase}${url}`;
+    };
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -93,6 +101,10 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 const res = await fetch(`${apiBase}/admin/business-data`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch business data');
                 setBusinessData(await res.json());
+            } else if (view === 'backgrounds') {
+                const res = await fetch(`${apiBase}/backgrounds`, { headers });
+                if (!res.ok) throw new Error('Failed to fetch backgrounds');
+                setBackgrounds(await res.json());
             } else if (view === 'templates') {
                 const res = await fetch(`${apiBase}/admin/templates`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch templates');
@@ -179,16 +191,57 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
     };
 
     const handleDeleteTemplate = async (id: string) => {
-        if (!confirm('Delete this template?')) return;
+        if (!confirm('Are you sure you want to delete this template?')) return;
         try {
             const res = await fetch(`${apiBase}/admin/templates/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (res.ok) fetchData();
-            else alert('Failed to delete template');
+            if (res.ok) {
+                setTemplates(templates.filter(t => t.id !== id));
+            }
         } catch (e) {
             alert('Error deleting template');
+        }
+    };
+
+    const handleUploadBackground = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        setUploadingBg(true);
+        try {
+            const res = await fetch(`${apiBase}/admin/backgrounds`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            if (res.ok) {
+                const newBg = await res.json();
+                setBackgrounds([newBg, ...backgrounds]);
+                (e.target as HTMLFormElement).reset();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Upload failed');
+            }
+        } catch (e) {
+            alert('Upload failed');
+        } finally {
+            setUploadingBg(false);
+        }
+    };
+
+    const handleDeleteBackground = async (id: number) => {
+        if (!confirm('Delete this background?')) return;
+        try {
+            const res = await fetch(`${apiBase}/admin/backgrounds/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setBackgrounds(backgrounds.filter(bg => bg.id !== id));
+            }
+        } catch (e) {
+            alert('Failed to delete background');
         }
     };
 
@@ -234,6 +287,12 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     onClick={() => setView('business')}
                 >
                     <Briefcase size={18} /> Business Data
+                </button>
+                <button
+                    className={view === 'backgrounds' ? 'active' : ''}
+                    onClick={() => setView('backgrounds')}
+                >
+                    <Image size={18} /> Backgrounds
                 </button>
                 <button
                     className={view === 'logs' ? 'active' : ''}
@@ -401,6 +460,76 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                )}
+
+                {!loading && !error && view === 'backgrounds' && (
+                    <div className="backgrounds-admin">
+                        <div className="admin-form-section" style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Upload size={20} /> Add New Background</h3>
+                            <form onSubmit={handleUploadBackground} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '1rem', alignItems: 'end' }}>
+                                <div className="form-group">
+                                    <label>Background Name</label>
+                                    <input name="name" placeholder="e.g. Modern Office" required style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                                </div>
+                                <div className="form-group">
+                                    <label>Category</label>
+                                    <select name="category" style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                                        <option value="general">General</option>
+                                        <option value="modern">Modern</option>
+                                        <option value="abstract">Abstract</option>
+                                        <option value="nature">Nature</option>
+                                        <option value="office">Office</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Image File (PNG/JPG)</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <input type="file" name="image" accept="image/*" required style={{ fontSize: '0.8rem' }} />
+                                        <button type="submit" disabled={uploadingBg} className="save-btn" style={{ padding: '0.6rem 1.2rem' }}>
+                                            {uploadingBg ? 'Uploading...' : 'Upload'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div className="table-header" style={{ marginBottom: '1rem' }}>
+                            <h3>Static Assets Library</h3>
+                            <p>Manage background images available to all users</p>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                            {backgrounds.map(bg => (
+                                <div key={bg.id} className="bg-card" style={{
+                                    background: 'white',
+                                    borderRadius: '12px',
+                                    overflow: 'hidden',
+                                    border: '1px solid #e2e8f0',
+                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                }}>
+                                    <div style={{ position: 'relative', paddingTop: '56.25%', background: '#eee' }}>
+                                        <img
+                                            src={getAssetUrl(bg.url)}
+                                            alt={bg.name}
+                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    </div>
+                                    <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{bg.name}</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{bg.category}</div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteBackground(bg.id)}
+                                            style={{ color: '#ef4444', background: '#fef2f2', border: 'none', padding: '0.4rem', borderRadius: '4px', cursor: 'pointer' }}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}

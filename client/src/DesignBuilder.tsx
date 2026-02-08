@@ -4,6 +4,12 @@ import QRCode from 'qrcode';
 import { ArrowLeft, Download, Image as ImageIcon, FileText, Loader2, Save, Check } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+const SERVER_BASE = API_BASE.replace(/\/api$/, '');
+const getAssetUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url;
+    return `${SERVER_BASE}${url}`;
+};
 
 export const DesignBuilder: React.FC<{
     initialTemplate: DesignTemplate;
@@ -46,7 +52,15 @@ export const DesignBuilder: React.FC<{
     const [qrBase64, setQrBase64] = useState<string>('');
     const [isExporting, setIsExporting] = useState<'png' | 'pdf' | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [backgrounds, setBackgrounds] = useState<any[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+    useEffect(() => {
+        fetch(`${API_BASE}/backgrounds`)
+            .then(res => res.json())
+            .then(data => setBackgrounds(data))
+            .catch(err => console.error('Failed to fetch backgrounds', err));
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;
@@ -159,7 +173,8 @@ export const DesignBuilder: React.FC<{
 
             if (data.backgroundImageUrl) {
                 const bgImg = new Image();
-                bgImg.src = data.backgroundImageUrl;
+                bgImg.crossOrigin = 'anonymous';
+                bgImg.src = getAssetUrl(data.backgroundImageUrl);
                 await new Promise(resolve => (bgImg.onload = resolve));
                 ctx.drawImage(bgImg, 0, 0, width, height);
             }
@@ -210,7 +225,8 @@ export const DesignBuilder: React.FC<{
 
                 if (el.type === 'logo' && data.logoUrl) {
                     const logoImg = new Image();
-                    logoImg.src = data.logoUrl;
+                    logoImg.crossOrigin = 'anonymous';
+                    logoImg.src = getAssetUrl(data.logoUrl);
                     await new Promise(resolve => (logoImg.onload = resolve));
                     const ratio = Math.min(el.maxWidth / logoImg.width, el.maxHeight / logoImg.height);
                     const w = logoImg.width * ratio;
@@ -226,7 +242,8 @@ export const DesignBuilder: React.FC<{
 
                     if (el.includeLogo && data.logoUrl) {
                         const logoImg = new Image();
-                        logoImg.src = data.logoUrl;
+                        logoImg.crossOrigin = 'anonymous';
+                        logoImg.src = getAssetUrl(data.logoUrl);
                         await new Promise(resolve => (logoImg.onload = resolve));
                         const logoSize = el.size * 0.22;
                         const pad = el.logoPadding || 0;
@@ -325,21 +342,59 @@ export const DesignBuilder: React.FC<{
                         </div>
                     </div>
                     <div className="input-group" style={{ marginTop: '1rem' }}>
-                        <label>Background Image</label>
+                        <label>Background Decoration</label>
+
                         <div className="file-upload">
                             <label htmlFor="bg-upload" className="file-label">
-                                <ImageIcon size={18} /> {data.backgroundImageUrl ? 'Change Background' : 'Upload Background'}
+                                <ImageIcon size={18} /> {data.backgroundImageUrl ? 'Change/Upload' : 'Upload Overlay'}
                             </label>
                             <input id="bg-upload" type="file" accept="image/*" onChange={handleBackgroundUpload} className="hidden" />
-                            {data.backgroundImageUrl && (
-                                <button
-                                    className="remove-btn"
-                                    onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: undefined })); setHasUnsavedChanges(true); }}
-                                >
-                                    Remove Background
-                                </button>
-                            )}
                         </div>
+
+                        {backgrounds.length > 0 && (
+                            <div className="bg-library-selector" style={{ marginTop: '0.8rem' }}>
+                                <label style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '0.4rem', display: 'block' }}>Choose from Library</label>
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(5, 1fr)',
+                                    gap: '4px',
+                                    background: '#f1f5f9',
+                                    padding: '4px',
+                                    borderRadius: '8px'
+                                }}>
+                                    {backgrounds.map(bg => (
+                                        <button
+                                            key={bg.id}
+                                            onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: bg.url })); setHasUnsavedChanges(true); }}
+                                            style={{
+                                                padding: 0,
+                                                border: data.backgroundImageUrl === bg.url ? '2px solid #4f46e5' : '1px solid #e2e8f0',
+                                                borderRadius: '4px',
+                                                overflow: 'hidden',
+                                                height: '30px',
+                                                background: '#eee'
+                                            }}
+                                            title={bg.name}
+                                        >
+                                            <img src={getAssetUrl(bg.url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: undefined })); setHasUnsavedChanges(true); }}
+                                        style={{
+                                            padding: 0,
+                                            border: !data.backgroundImageUrl ? '2px solid #4f46e5' : '1px solid #e2e8f0',
+                                            borderRadius: '4px',
+                                            background: 'white',
+                                            fontSize: '0.6rem',
+                                            height: '30px'
+                                        }}
+                                    >
+                                        None
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </section>
 

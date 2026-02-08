@@ -144,6 +144,17 @@ export function syncDatabase() {
       console.log('Added headers and body columns to api_logs table');
     }
 
+    // Background Images Table
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS background_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        url TEXT,
+        category TEXT DEFAULT 'general',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Seed Templates if empty
     const templateCount = db.prepare('SELECT COUNT(*) as count FROM templates').get().count;
     if (templateCount === 0) {

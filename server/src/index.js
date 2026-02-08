@@ -131,6 +131,20 @@ const templateUpload = multer({
     limits: { fileSize: 1024 * 1024 } // 1MB limit
 });
 
+const backgroundStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dir = join(__dirname, '../public/uploads/backgrounds/');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname) || '.png';
+        cb(null, 'bg-' + uniqueSuffix + ext);
+    }
+});
+const backgroundUpload = multer({ storage: backgroundStorage });
+
 // Auth Middleware
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -393,6 +407,49 @@ app.delete('/api/admin/templates/:id', authenticateToken, authenticateAdmin, (re
         res.json({ message: 'Template deleted successfully' });
     } catch (e) {
         res.status(500).json({ error: 'Failed to delete template' });
+    }
+});
+
+// Background Images Management
+app.get('/api/backgrounds', (req, res) => {
+    try {
+        const backgrounds = db.prepare('SELECT * FROM background_images ORDER BY created_at DESC').all();
+        res.json(backgrounds);
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch backgrounds' });
+    }
+});
+
+app.post('/api/admin/backgrounds', authenticateToken, authenticateAdmin, backgroundUpload.single('image'), (req, res) => {
+    const { name, category } = req.body;
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+        const url = `/public/uploads/backgrounds/${req.file.filename}`;
+
+        const result = db.prepare('INSERT INTO background_images (name, url, category) VALUES (?, ?, ?)')
+            .run(name || 'Untitled', url, category || 'general');
+
+        res.json({ id: result.lastInsertRowid, name, url, category });
+    } catch (e) {
+        console.error('Failed to upload background:', e);
+        res.status(500).json({ error: 'Failed to upload background' });
+    }
+});
+
+app.delete('/api/admin/backgrounds/:id', authenticateToken, authenticateAdmin, (req, res) => {
+    const { id } = req.params;
+    try {
+        // Find URL to delete file (Optional but good practice)
+        const bg = db.prepare('SELECT url FROM background_images WHERE id = ?').get(id);
+        if (bg) {
+            const filePath = join(__dirname, '..', bg.url);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+
+        db.prepare('DELETE FROM background_images WHERE id = ?').run(id);
+        res.json({ message: 'Background deleted successfully' });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to delete background' });
     }
 });
 
