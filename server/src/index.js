@@ -334,14 +334,23 @@ app.get('/api/admin/logs', authenticateToken, authenticateAdmin, (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
+        const urlFilter = req.query.url || '';
         const offset = (page - 1) * limit;
 
-        const totalRows = db.prepare('SELECT COUNT(*) as count FROM api_logs').get().count;
-        const logs = db.prepare(`
-            SELECT * FROM api_logs 
-            ORDER BY timestamp DESC 
-            LIMIT ? OFFSET ?
-        `).all(limit, offset);
+        let totalQuery = 'SELECT COUNT(*) as count FROM api_logs';
+        let logsQuery = 'SELECT * FROM api_logs';
+        const queryParams = [];
+
+        if (urlFilter) {
+            totalQuery += ' WHERE url LIKE ?';
+            logsQuery += ' WHERE url LIKE ?';
+            queryParams.push(`%${urlFilter}%`);
+        }
+
+        logsQuery += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
+
+        const totalRows = db.prepare(totalQuery).get(urlFilter ? queryParams : []).count;
+        const logs = db.prepare(logsQuery).all(...queryParams, limit, offset);
 
         res.json({
             logs,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X, Briefcase, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import type { User, DesignData } from './types';
 
 interface AdminPanelProps {
@@ -45,8 +45,9 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
     const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Logs Pagination
+    // Logs Pagination & Filter
     const [logsPage, setLogsPage] = useState(1);
+    const [logsFilter, setLogsFilter] = useState('');
     const [logsPagination, setLogsPagination] = useState({ total: 0, pages: 1, limit: 50 });
 
     // Modal State
@@ -57,8 +58,11 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
     const apiBase = import.meta.env.VITE_API_BASE || '/api';
 
     useEffect(() => {
-        fetchData();
-    }, [view, logsPage]);
+        const timer = setTimeout(() => {
+            fetchData();
+        }, view === 'logs' ? 300 : 0);
+        return () => clearTimeout(timer);
+    }, [view, logsPage, logsFilter]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -78,7 +82,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 if (!res.ok) throw new Error('Failed to fetch templates');
                 setTemplates(await res.json());
             } else if (view === 'logs') {
-                const res = await fetch(`${apiBase}/admin/logs?page=${logsPage}&limit=${logsPagination.limit}`, { headers });
+                const res = await fetch(`${apiBase}/admin/logs?page=${logsPage}&limit=${logsPagination.limit}&url=${encodeURIComponent(logsFilter)}`, { headers });
                 if (!res.ok) throw new Error('Failed to fetch logs');
                 const data = await res.json();
                 setLogs(data.logs);
@@ -376,6 +380,21 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
 
                 {!loading && !error && view === 'logs' && (
                     <div className="logs-admin">
+                        <div className="filter-bar" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <div className="search-input-wrapper" style={{ position: 'relative', flex: 1 }}>
+                                <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Filter by API URL (e.g. /api/export)..."
+                                    value={logsFilter}
+                                    onChange={(e) => { setLogsFilter(e.target.value); setLogsPage(1); }}
+                                    style={{ width: '100%', padding: '0.6rem 0.6rem 0.6rem 2.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem', outline: 'none' }}
+                                />
+                            </div>
+                            <div className="log-count" style={{ fontSize: '0.85rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                Found <b>{logsPagination.total}</b> entries
+                            </div>
+                        </div>
                         <div className="table-responsive">
                             <table className="admin-table logs-table clickable-rows">
                                 <thead>
