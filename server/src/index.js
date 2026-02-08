@@ -26,6 +26,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use((req, res, next) => {
     const start = Date.now();
@@ -52,6 +53,21 @@ app.use((req, res, next) => {
 
         if (!isStatic) {
             try {
+                let loggedRequestBody = req.body;
+                if (req.file) {
+                    loggedRequestBody = { ...req.body, _uploadedFile: req.file.originalname };
+                } else if (req.files) {
+                    // Handle both array of files and fields with arrays
+                    const filesInfo = Array.isArray(req.files)
+                        ? req.files.map(f => f.originalname)
+                        : Object.keys(req.files).map(key => `${key}: ${req.files[key].length} files`);
+                    loggedRequestBody = { ...req.body, _uploadedFiles: filesInfo };
+                }
+
+                const requestBodyStr = loggedRequestBody && Object.keys(loggedRequestBody).length > 0
+                    ? JSON.stringify(loggedRequestBody)
+                    : (req.body && Object.keys(req.body).length > 0 ? JSON.stringify(req.body) : null);
+
                 db.prepare(`
                     INSERT INTO api_logs (method, url, user_email, status_code, duration, ip, user_agent, headers, request_body, response_body)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -64,7 +80,7 @@ app.use((req, res, next) => {
                     req.ip || req.get('x-forwarded-for') || 'unknown',
                     req.get('user-agent') || 'unknown',
                     JSON.stringify(req.headers),
-                    req.body ? JSON.stringify(req.body) : null,
+                    requestBodyStr,
                     isExport ? '[Binary Export Data]' : (responseBody.length > 5000 ? responseBody.substring(0, 5000) + '... [Truncated]' : responseBody)
                 );
             } catch (e) {
