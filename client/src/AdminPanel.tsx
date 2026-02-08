@@ -484,9 +484,9 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>Image File (PNG/JPG)</label>
+                                    <label>Image File (PNG/JPG/SVG)</label>
                                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                        <input type="file" name="image" accept="image/*" required style={{ fontSize: '0.8rem' }} />
+                                        <input type="file" name="image" accept="image/*,image/svg+xml" required style={{ fontSize: '0.8rem' }} />
                                         <button type="submit" disabled={uploadingBg} className="save-btn" style={{ padding: '0.6rem 1.2rem' }}>
                                             {uploadingBg ? 'Uploading...' : 'Upload'}
                                         </button>

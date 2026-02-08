@@ -348,7 +348,7 @@ export const DesignBuilder: React.FC<{
                             <label htmlFor="bg-upload" className="file-label">
                                 <ImageIcon size={18} /> {data.backgroundImageUrl ? 'Change/Upload' : 'Upload Overlay'}
                             </label>
-                            <input id="bg-upload" type="file" accept="image/*" onChange={handleBackgroundUpload} className="hidden" />
+                            <input id="bg-upload" type="file" accept="image/*,image/svg+xml" onChange={handleBackgroundUpload} className="hidden" />
                         </div>
 
                         {backgrounds.length > 0 && (
