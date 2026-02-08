@@ -359,7 +359,7 @@ export const DesignBuilder: React.FC<{
                     </div>
                     <div className="input-group">
                         <label>CTA Subtext</label>
-                        <textarea name="ctaText" value={data.ctaText} onChange={handleChange} rows={2} placeholder="Impressed with our services?" />
+                        <textarea name="ctaText" value={data.ctaText} onChange={handleChange} rows={2} placeholder="" />
                     </div>
                 </section>
 

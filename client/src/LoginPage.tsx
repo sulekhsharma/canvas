@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, Globe, ShieldCheck, Zap } from 'lucide-react';
+import { LogIn, Globe, ShieldCheck, Zap, Check } from 'lucide-react';
 
 interface LoginPageProps {
     onLogin: (token: string, user: any) => void;
@@ -43,44 +43,94 @@ export const LoginPage = ({ onLogin }: LoginPageProps) => {
         <div className="login-container">
             <div className="login-visual">
                 <div className="visual-content">
-                    <h2>Transform Reviews into Business Growth</h2>
-                    <p>The ultimate QR generator for Google My Business. Professional posters in 30 seconds.</p>
+                    <div className="hero-badge">🚀 #1 GMB Tool for Local Business</div>
+                    <h2>Turn Every Customer Into a 5-Star Review</h2>
+                    <p className="hero-sub">Professional review posters, custom-branded for your business. Increase your GMB ranking with high-converting QR designs.</p>
 
-                    <div className="features-list">
-                        <div className="feature-item-pill">
-                            <Zap size={18} />
-                            <span>Instant Live Preview</span>
+                    <div className="features-grid-v2">
+                        <div className="feature-card-v2">
+                            <div className="f-icon"><Zap size={20} /></div>
+                            <div>
+                                <h4>Instant Creation</h4>
+                                <p>Generate posters in under 30 seconds.</p>
+                            </div>
                         </div>
-                        <div className="feature-item-pill">
-                            <Globe size={18} />
-                            <span>300 DPI Print Ready</span>
+                        <div className="feature-card-v2">
+                            <div className="f-icon"><Globe size={20} /></div>
+                            <div>
+                                <h4>300 DPI High-Res</h4>
+                                <p>Print-ready exports for any material.</p>
+                            </div>
                         </div>
-                        <div className="feature-item-pill">
-                            <ShieldCheck size={18} />
-                            <span>Compliant Templates</span>
+                        <div className="feature-card-v2">
+                            <div className="f-icon"><ShieldCheck size={20} /></div>
+                            <div>
+                                <h4>Smart Branding</h4>
+                                <p>Automatic Google-compliant styling.</p>
+                            </div>
                         </div>
-                        <div className="feature-item-pill">
-                            <Zap size={18} />
-                            <span>PDF & PNG Exports</span>
+                    </div>
+
+                    <div className="showcase-section">
+                        <h3>Premium Design Library</h3>
+                        <div className="showcase-scroll">
+                            <div className="showcase-item">
+                                <img src="/home/dhiren/.gemini/antigravity/brain/9bf54449-d5e6-44eb-a289-b0c3d290b3a5/gmb_poster_showcase_1_1770520207943.png" alt="Clinical Style" />
+                                <span>Modern Clinical</span>
+                            </div>
+                            <div className="showcase-item">
+                                <img src="/home/dhiren/.gemini/antigravity/brain/9bf54449-d5e6-44eb-a289-b0c3d290b3a5/gmb_poster_showcase_2_1770520222832.png" alt="Executive Dark" />
+                                <span>Executive Dark</span>
+                            </div>
+                            <div className="showcase-item">
+                                <img src="/home/dhiren/.gemini/antigravity/brain/9bf54449-d5e6-44eb-a289-b0c3d290b3a5/gmb_poster_showcase_3_1770520242982.png" alt="Vibrant Tech" />
+                                <span>Vibrant Tech</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="how-it-works">
+                        <h3>How It Works</h3>
+                        <div className="steps-row">
+                            <div className="step"><span>1</span> Link GMB</div>
+                            <div className="step"><span>2</span> Pick Design</div>
+                            <div className="step"><span>3</span> Go Live</div>
                         </div>
                     </div>
 
                     <div className="pricing-section">
-                        <h3>Choose Your Plan</h3>
+                        <h3>Professional Plans</h3>
                         <div className="pricing-grid">
                             <a href="https://w3axis.in/google-business-review-qr-code.html" className="pricing-card">
+                                <div className="plan-tag">Personal</div>
                                 <div className="plan-name">Basic</div>
                                 <div className="plan-price">Rs 99<span>/mo</span></div>
+                                <ul className="plan-features">
+                                    <li><Check size={14} /> 2 Designs/mo</li>
+                                    <li><Check size={14} /> PNG Export</li>
+                                </ul>
                                 <div className="buy-btn">Get Started</div>
                             </a>
                             <a href="https://w3axis.in/google-business-review-qr-code.html" className="pricing-card featured">
+                                <div className="plan-tag popular">Best Value</div>
                                 <div className="plan-name">Standard</div>
                                 <div className="plan-price">Rs 199<span>/mo</span></div>
-                                <div className="buy-btn">Popular</div>
+                                <ul className="plan-features">
+                                    <li><Check size={14} /> 10 Designs/mo</li>
+                                    <li><Check size={14} /> PDF & PNG High-Res</li>
+                                    <li><Check size={14} /> Background Removal</li>
+                                </ul>
+                                <div className="buy-btn">Go Popular</div>
                             </a>
                             <a href="https://w3axis.in/google-business-review-qr-code.html" className="pricing-card">
+                                <div className="plan-tag">Teams</div>
                                 <div className="plan-name">Premium</div>
                                 <div className="plan-price">Rs 299<span>/mo</span></div>
+                                <ul className="plan-features">
+                                    <li><Check size={14} /> Unlimited Designs</li>
+                                    <li><Check size={14} /> Custom Watermarks</li>
+                                    <li><Check size={14} /> Team Sharing</li>
+                                </ul>
                                 <div className="buy-btn">Go Pro</div>
                             </a>
                         </div>
@@ -100,7 +150,7 @@ export const LoginPage = ({ onLogin }: LoginPageProps) => {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="demo1@example.com"
+                                placeholder="name@company.com"
                                 required
                             />
                         </div>
@@ -133,26 +183,55 @@ export const LoginPage = ({ onLogin }: LoginPageProps) => {
             </div>
 
             <style>{`
-        .login-container { display: grid; grid-template-columns: 1fr 500px; height: 100vh; overflow: hidden; background: #f8fafc; }
-        .login-visual { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); display: flex; align-items: center; justify-content: center; color: white; padding: 2rem; overflow-y: auto; }
-        .visual-content { max-width: 600px; width: 100%; }
-        .visual-content h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; }
-        .visual-content p { font-size: 1.1rem; color: #94a3b8; line-height: 1.5; margin-bottom: 2rem; }
+        .login-container { display: grid; grid-template-columns: 1fr 450px; height: 100vh; overflow: hidden; background: #f8fafc; }
+        .login-visual { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; align-items: flex-start; justify-content: center; color: white; padding: 3rem 4rem; overflow-y: auto; scrollbar-width: none; }
+        .login-visual::-webkit-scrollbar { display: none; }
         
-        .features-list { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 3rem; }
-        .feature-item-pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.6rem 1.2rem; border-radius: 99px; display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; color: #cbd5e1; }
+        .visual-content { max-width: 800px; width: 100%; }
+        .hero-badge { display: inline-block; padding: 0.4rem 1rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 99px; color: #60a5fa; font-size: 0.8rem; font-weight: 600; margin-bottom: 1.5rem; }
+        .visual-content h2 { font-size: 2.75rem; font-weight: 900; margin-bottom: 1rem; line-height: 1.1; letter-spacing: -0.02em; }
+        .hero-sub { font-size: 1.15rem; color: #94a3b8; line-height: 1.6; margin-bottom: 2.5rem; }
+        
+        .features-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 3.5rem; }
+        .feature-card-v2 { display: flex; gap: 1rem; }
+        .f-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; color: #3b82f6; flex-shrink: 0; }
+        .feature-card-v2 h4 { font-size: 0.95rem; margin: 0 0 0.25rem 0; color: #f1f5f9; }
+        .feature-card-v2 p { font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4; }
 
-        .pricing-section { margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; }
-        .pricing-section h3 { margin-bottom: 1.5rem; font-size: 1.25rem; color: #cbd5e1; }
-        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .pricing-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; text-decoration: none; color: inherit; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .pricing-card:hover { background: rgba(255,255,255,0.07); transform: translateY(-5px); border-color: #3b82f6; }
-        .pricing-card.featured { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; }
-        .plan-name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 0.5rem; font-weight: 700; }
-        .plan-price { font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: 1rem; }
+        .showcase-section { margin-bottom: 3.5rem; }
+        .showcase-section h3 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 1.5rem; }
+        .showcase-scroll { display: flex; gap: 1.5rem; padding-bottom: 1rem; overflow-x: auto; scrollbar-width: none; }
+        .showcase-scroll::-webkit-scrollbar { display: none; }
+        .showcase-item { flex-shrink: 0; width: 180px; }
+        .showcase-item img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 0.75rem; transition: transform 0.2s; }
+        .showcase-item:hover img { transform: scale(1.05); border-color: #3b82f6; }
+        .showcase-item span { display: block; text-align: center; font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+
+        .how-it-works { margin-bottom: 3.5rem; background: rgba(255,255,255,0.03); border-radius: 20px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+        .how-it-works h3 { font-size: 1rem; margin-bottom: 1.5rem; color: #f1f5f9; }
+        .steps-row { display: flex; justify-content: space-between; gap: 1rem; }
+        .step { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: #cbd5e1; font-weight: 600; }
+        .step span { width: 28px; height: 28px; border-radius: 50%; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+
+        .pricing-section { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2.5rem; padding-bottom: 4rem; }
+        .pricing-section h3 { margin-bottom: 2rem; font-size: 1.25rem; color: #f1f5f9; text-align: center; }
+        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+        .pricing-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 1.75rem; text-decoration: none; color: inherit; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; position: relative; }
+        .pricing-card:hover { background: rgba(255,255,255,0.05); transform: translateY(-8px); border-color: #3b82f6; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .pricing-card.featured { background: rgba(59, 130, 246, 0.05); border-color: #3b82f6; }
+        
+        .plan-tag { font-size: 0.7rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem; text-transform: uppercase; }
+        .plan-tag.popular { color: #3b82f6; }
+        .plan-name { font-size: 1.25rem; font-weight: 800; color: white; margin-bottom: 0.5rem; }
+        .plan-price { font-size: 2rem; font-weight: 900; color: white; margin-bottom: 1.5rem; }
         .plan-price span { font-size: 0.9rem; color: #64748b; font-weight: 400; }
-        .buy-btn { width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 0.8rem; font-weight: 600; color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
-        .featured .buy-btn { background: #3b82f6; color: white; }
+        
+        .plan-features { list-style: none; padding: 0; margin: 0 0 2rem 0; flex-grow: 1; }
+        .plan-features li { font-size: 0.85rem; color: #94a3b8; display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+        .plan-features li svg { color: #10b981; }
+
+        .buy-btn { width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 12px; font-size: 0.85rem; font-weight: 700; color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); text-align: center; }
+        .featured .buy-btn { background: #3b82f6; color: white; border-color: #3b82f6; }
 
         .login-form-area { display: flex; align-items: center; justify-content: center; padding: 2rem; }
         .form-card { width: 100%; max-width: 400px; padding: 2.5rem; }

@@ -58,6 +58,9 @@ db.exec(`
     duration INTEGER,
     ip TEXT,
     user_agent TEXT,
+    headers TEXT,
+    request_body TEXT,
+    response_body TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
@@ -124,9 +127,22 @@ export function syncDatabase() {
         duration INTEGER,
         ip TEXT,
         user_agent TEXT,
+        headers TEXT,
+        request_body TEXT,
+        response_body TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // api_logs table migrations
+    const logTableInfo = db.prepare("PRAGMA table_info(api_logs)").all();
+    const hasHeaders = logTableInfo.some(col => col.name === 'headers');
+    if (!hasHeaders && logTableInfo.length > 0) {
+      db.prepare("ALTER TABLE api_logs ADD COLUMN headers TEXT").run();
+      db.prepare("ALTER TABLE api_logs ADD COLUMN request_body TEXT").run();
+      db.prepare("ALTER TABLE api_logs ADD COLUMN response_body TEXT").run();
+      console.log('Added headers and body columns to api_logs table');
+    }
 
     // Seed Templates if empty
     const templateCount = db.prepare('SELECT COUNT(*) as count FROM templates').get().count;

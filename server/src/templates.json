@@ -108,7 +108,7 @@
             {
                 "id": "dental-impressed",
                 "type": "text",
-                "content": "Impressed with our services?",
+                "content": "",
                 "field": "ctaText",
                 "x": 1240,
                 "y": 1050,
@@ -352,7 +352,7 @@
             {
                 "id": "subtitle-scan",
                 "type": "text",
-                "content": "SCAN TO WRITE A REVIEW",
+                "content": "",
                 "field": "ctaText",
                 "x": 1240,
                 "y": 950,
@@ -534,7 +534,7 @@
                 "id": "cta",
                 "type": "text",
                 "field": "ctaText",
-                "content": "Scan to share your thoughts on Google",
+                "content": "",
                 "x": 1240,
                 "y": 2650,
                 "fontSize": 80,
@@ -671,7 +671,7 @@
                 "id": "cta-text",
                 "type": "text",
                 "field": "ctaText",
-                "content": "SCAN & REVIEW",
+                "content": "",
                 "x": 1240,
                 "y": 2810,
                 "fontSize": 110,
@@ -805,6 +805,337 @@
                 "fontWeight": "600",
                 "align": "center",
                 "color": "#94a3b8"
+            }
+        ]
+    },
+    {
+        "id": "premium-clinical-v1",
+        "name": "Premium Clinical Poster",
+        "description": "Clean, healthcare-focused design with soft blue curves and professional layout.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "bg-pill",
+                "type": "decoration",
+                "x": 740,
+                "y": 450,
+                "width": 1000,
+                "height": 600,
+                "color": "#f0f7ff",
+                "borderRadius": 300
+            },
+            {
+                "id": "top-logo",
+                "type": "logo",
+                "x": 1240,
+                "y": 600,
+                "maxWidth": 600,
+                "maxHeight": 300
+            },
+            {
+                "id": "stars",
+                "type": "star-rating",
+                "x": 1240,
+                "y": 950,
+                "size": 120,
+                "color": "#fbbf24",
+                "count": 5
+            },
+            {
+                "id": "hook",
+                "type": "text",
+                "field": "hookText",
+                "content": "Proudly Reviewed by You",
+                "x": 1240,
+                "y": 1150,
+                "fontSize": 140,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#1e40af"
+            },
+            {
+                "id": "qr-frame",
+                "type": "decoration",
+                "x": 540,
+                "y": 1400,
+                "width": 1400,
+                "height": 1400,
+                "color": "#ffffff",
+                "borderRadius": 120,
+                "borderWidth": 15,
+                "strokeColor": "#3b82f6"
+            },
+            {
+                "id": "main-qr",
+                "type": "qr",
+                "x": 1240,
+                "y": 2100,
+                "size": 1100,
+                "errorCorrection": "H",
+                "includeLogo": true
+            },
+            {
+                "id": "biz-name",
+                "type": "text",
+                "field": "businessName",
+                "content": "DENTAL CARE CENTER",
+                "x": 1240,
+                "y": 3000,
+                "fontSize": 120,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "900",
+                "align": "center",
+                "color": "#1e293b"
+            },
+            {
+                "id": "cta",
+                "type": "text",
+                "field": "ctaText",
+                "content": "",
+                "x": 1240,
+                "y": 3250,
+                "fontSize": 80,
+                "fontFamily": "Inter, sans-serif",
+                "align": "center",
+                "color": "#64748b"
+            }
+        ]
+    },
+    {
+        "id": "elite-executive-dark",
+        "name": "Elite Executive Dark",
+        "description": "Luxurious dark design with gold accents for premium business branding.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "main-bg",
+                "type": "decoration",
+                "x": 0,
+                "y": 0,
+                "width": 2480,
+                "height": 3508,
+                "color": "#0d0d0d"
+            },
+            {
+                "id": "header-accent",
+                "type": "decoration",
+                "x": 0,
+                "y": 0,
+                "width": 2480,
+                "height": 40,
+                "color": "#d4af37"
+            },
+            {
+                "id": "top-label",
+                "type": "text",
+                "content": "EXCELLENT 5.0",
+                "x": 1240,
+                "y": 450,
+                "fontSize": 100,
+                "fontFamily": "Georgia, serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#d4af37"
+            },
+            {
+                "id": "hook",
+                "type": "text",
+                "field": "hookText",
+                "content": "TRUSTED BY PROFESSIONALS",
+                "x": 1240,
+                "y": 650,
+                "fontSize": 120,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#ffffff"
+            },
+            {
+                "id": "qr-outer-glow",
+                "type": "decoration",
+                "x": 565,
+                "y": 1125,
+                "width": 1350,
+                "height": 1350,
+                "color": "rgba(212, 175, 55, 0.1)",
+                "borderRadius": 80
+            },
+            {
+                "id": "qr-frame",
+                "type": "decoration",
+                "x": 640,
+                "y": 1200,
+                "width": 1200,
+                "height": 1200,
+                "color": "#1a1a1a",
+                "borderRadius": 60,
+                "borderWidth": 10,
+                "strokeColor": "#d4af37"
+            },
+            {
+                "id": "main-qr",
+                "type": "qr",
+                "x": 1240,
+                "y": 1800,
+                "size": 1000,
+                "errorCorrection": "H",
+                "color": "#ffffff",
+                "background": "#1a1a1a"
+            },
+            {
+                "id": "biz-name",
+                "type": "text",
+                "field": "businessName",
+                "content": "EXECUTIVE SERVICES INC",
+                "x": 1240,
+                "y": 2850,
+                "fontSize": 110,
+                "fontFamily": "Georgia, serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#ffffff"
+            },
+            {
+                "id": "cta",
+                "type": "text",
+                "field": "ctaText",
+                "content": "",
+                "x": 1240,
+                "y": 3050,
+                "fontSize": 90,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "500",
+                "align": "center",
+                "color": "#d4af37"
+            },
+            {
+                "id": "google-logo-mock",
+                "type": "text",
+                "content": "Google",
+                "x": 1240,
+                "y": 3250,
+                "fontSize": 120,
+                "fontFamily": "Product Sans, sans-serif",
+                "fontWeight": "600",
+                "align": "center",
+                "color": "#94a3b8"
+            }
+        ]
+    },
+    {
+        "id": "vibrant-neon-retail",
+        "name": "Neon Vibrant Retail",
+        "description": "High-energy neon theme with geometric shapes for modern retail and cafes.",
+        "orientation": "portrait",
+        "dimensions": {
+            "width": 2480,
+            "height": 3508
+        },
+        "elements": [
+            {
+                "id": "bg",
+                "type": "decoration",
+                "x": 0,
+                "y": 0,
+                "width": 2480,
+                "height": 3508,
+                "color": "#1e1b4b"
+            },
+            {
+                "id": "tri-1",
+                "type": "decoration",
+                "x": 1600,
+                "y": -200,
+                "width": 800,
+                "height": 800,
+                "color": "#4338ca",
+                "borderRadius": 400
+            },
+            {
+                "id": "tri-2",
+                "type": "decoration",
+                "x": -200,
+                "y": 2800,
+                "width": 1000,
+                "height": 1000,
+                "color": "#6366f1",
+                "borderRadius": 500
+            },
+            {
+                "id": "hook",
+                "type": "text",
+                "field": "hookText",
+                "content": "LEAVE US A REVIEW!",
+                "x": 1240,
+                "y": 600,
+                "fontSize": 200,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "900",
+                "align": "center",
+                "color": "#ffffff"
+            },
+            {
+                "id": "qr-shadow",
+                "type": "decoration",
+                "x": 595,
+                "y": 1155,
+                "width": 1300,
+                "height": 1300,
+                "color": "rgba(0,0,0,0.5)",
+                "borderRadius": 100
+            },
+            {
+                "id": "qr-card",
+                "type": "decoration",
+                "x": 590,
+                "y": 1150,
+                "width": 1300,
+                "height": 1300,
+                "color": "#ffffff",
+                "borderRadius": 100
+            },
+            {
+                "id": "main-qr",
+                "type": "qr",
+                "x": 1240,
+                "y": 1800,
+                "size": 1100,
+                "errorCorrection": "H"
+            },
+            {
+                "id": "cta",
+                "type": "text",
+                "field": "ctaText",
+                "content": "",
+                "x": 1240,
+                "y": 2850,
+                "fontSize": 100,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "bold",
+                "align": "center",
+                "color": "#ffffff"
+            },
+            {
+                "id": "biz-name",
+                "type": "text",
+                "field": "businessName",
+                "content": "THE URBAN CAFE",
+                "x": 1240,
+                "y": 3150,
+                "fontSize": 120,
+                "fontFamily": "Inter, sans-serif",
+                "fontWeight": "900",
+                "align": "center",
+                "color": "#a5b4fc"
             }
         ]
     }

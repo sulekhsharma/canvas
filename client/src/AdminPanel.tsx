@@ -28,6 +28,10 @@ interface AdminLog {
     status_code: number;
     duration: number;
     ip: string;
+    user_agent: string;
+    headers: string;
+    request_body: string;
+    response_body: string;
     timestamp: string;
 }
 
@@ -41,9 +45,10 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
     const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Template Modal State
+    // Modal State
     const [showTemplateModal, setShowTemplateModal] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<any>(null);
+    const [selectedLog, setSelectedLog] = useState<AdminLog | null>(null);
 
     const apiBase = import.meta.env.VITE_API_BASE || '/api';
 
@@ -323,7 +328,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                 {!loading && !error && view === 'logs' && (
                     <div className="logs-admin">
                         <div className="table-responsive">
-                            <table className="admin-table logs-table">
+                            <table className="admin-table logs-table clickable-rows">
                                 <thead>
                                     <tr>
                                         <th>Time</th>
@@ -335,7 +340,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                                 </thead>
                                 <tbody>
                                     {logs.map(log => (
-                                        <tr key={log.id}>
+                                        <tr key={log.id} onClick={() => setSelectedLog(log)}>
                                             <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
                                             <td title={log.ip}>{log.user_email}</td>
                                             <td>
@@ -363,6 +368,15 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                         template={editingTemplate}
                         onClose={() => setShowTemplateModal(false)}
                         onSave={handleSaveTemplate}
+                    />
+                )
+            }
+
+            {
+                selectedLog && (
+                    <LogDetailsModal
+                        log={selectedLog}
+                        onClose={() => setSelectedLog(null)}
                     />
                 )
             }
@@ -577,7 +591,114 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                     height: 100%;
                     object-fit: contain;
                 }
+                .admin-table.clickable-rows tbody tr { cursor: pointer; transition: background 0.2s; }
+                .admin-table.clickable-rows tbody tr:hover { background: #f1f5f9; }
+
+                .log-details-modal { max-width: 900px !important; }
+                .log-info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                    gap: 1.5rem;
+                    margin-bottom: 2rem;
+                    background: #f8fafc;
+                    padding: 1.5rem;
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
+                }
+                .info-item { display: flex; flex-direction: column; gap: 0.25rem; }
+                .info-item.full-width { grid-column: 1 / -1; }
+                .info-item label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+                .info-item span, .info-item code { font-size: 0.9rem; color: #1e293b; word-break: break-all; }
+                .ua-text { font-family: monospace; font-size: 0.8rem !important; }
+
+                .log-data-sections { display: flex; flex-direction: column; gap: 1.5rem; }
+                .data-section h4 { margin: 0 0 0.5rem 0; color: #334155; font-size: 0.9rem; }
+                .data-section pre {
+                    background: #0f172a;
+                    color: #e2e8f0;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                    overflow-x: auto;
+                    max-height: 300px;
+                    white-space: pre-wrap;
+                    word-break: break-all;
+                }
+                
+                /* Custom scrollbar for pre */
+                .data-section pre::-webkit-scrollbar { width: 8px; height: 8px; }
+                .data-section pre::-webkit-scrollbar-track { background: #1e293b; }
+                .data-section pre::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
             `}</style>
+        </div>
+    );
+}
+
+function LogDetailsModal({ log, onClose }: { log: AdminLog, onClose: () => void }) {
+    const formatJSON = (str: string) => {
+        try {
+            return JSON.stringify(JSON.parse(str), null, 2);
+        } catch (e) {
+            return str;
+        }
+    };
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal-content log-details-modal">
+                <button className="modal-close" onClick={onClose}><X size={24} /></button>
+                <h3>API Log Details</h3>
+
+                <div className="log-info-grid">
+                    <div className="info-item">
+                        <label>ID</label>
+                        <span>{log.id}</span>
+                    </div>
+                    <div className="info-item">
+                        <label>Timestamp</label>
+                        <span>{new Date(log.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div className="info-item">
+                        <label>Method</label>
+                        <span className={`method-badge ${log.method.toLowerCase()}`}>{log.method}</span>
+                    </div>
+                    <div className="info-item">
+                        <label>Status</label>
+                        <span className={`status-badge ${log.status_code >= 400 ? 'error' : 'success'}`}>{log.status_code}</span>
+                    </div>
+                    <div className="info-item full-width">
+                        <label>URL</label>
+                        <code>{log.url}</code>
+                    </div>
+                    <div className="info-item">
+                        <label>User Email</label>
+                        <span>{log.user_email}</span>
+                    </div>
+                    <div className="info-item">
+                        <label>IP Address</label>
+                        <span>{log.ip}</span>
+                    </div>
+                    <div className="info-item full-width">
+                        <label>User Agent</label>
+                        <span className="ua-text">{log.user_agent}</span>
+                    </div>
+                </div>
+
+                <div className="log-data-sections">
+                    <div className="data-section">
+                        <h4>Headers</h4>
+                        <pre>{formatJSON(log.headers)}</pre>
+                    </div>
+                    <div className="data-section">
+                        <h4>Request Data</h4>
+                        <pre>{log.request_body ? formatJSON(log.request_body) : 'No request body'}</pre>
+                    </div>
+                    <div className="data-section">
+                        <h4>Response Data</h4>
+                        <pre>{log.response_body ? formatJSON(log.response_body) : 'No response body'}</pre>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

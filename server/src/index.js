@@ -25,32 +25,57 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
 app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+
 app.use((req, res, next) => {
     const start = Date.now();
+    let responseBody = '';
+
+    // Intercept res.send to capture response body
+    const originalSend = res.send;
+    res.send = function (chunk) {
+        if (typeof chunk === 'string' || Buffer.isBuffer(chunk)) {
+            responseBody = chunk.toString();
+        } else {
+            responseBody = JSON.stringify(chunk);
+        }
+        return originalSend.apply(res, arguments);
+    };
+
     res.on('finish', () => {
         const duration = Date.now() - start;
         const userEmail = req.user ? req.user.email : 'guest';
-        try {
-            db.prepare(`
-                INSERT INTO api_logs (method, url, user_email, status_code, duration, ip, user_agent)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(
-                req.method,
-                req.url,
-                userEmail,
-                res.statusCode,
-                duration,
-                req.ip || req.get('x-forwarded-for') || 'unknown',
-                req.get('user-agent') || 'unknown'
-            );
-        } catch (e) {
-            console.error('Failed to log API request:', e);
+
+        // Skip logging for static assets and potentially huge binary exports
+        const isStatic = req.url.startsWith('/public') || req.url.startsWith('/assets') || req.url === '/' || req.url.endsWith('.html');
+        const isExport = req.url.includes('/export/');
+
+        if (!isStatic) {
+            try {
+                db.prepare(`
+                    INSERT INTO api_logs (method, url, user_email, status_code, duration, ip, user_agent, headers, request_body, response_body)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `).run(
+                    req.method,
+                    req.url,
+                    userEmail,
+                    res.statusCode,
+                    duration,
+                    req.ip || req.get('x-forwarded-for') || 'unknown',
+                    req.get('user-agent') || 'unknown',
+                    JSON.stringify(req.headers),
+                    req.body ? JSON.stringify(req.body) : null,
+                    isExport ? '[Binary Export Data]' : (responseBody.length > 5000 ? responseBody.substring(0, 5000) + '... [Truncated]' : responseBody)
+                );
+            } catch (e) {
+                console.error('Failed to log API request:', e);
+            }
         }
     });
+
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
-app.use(express.json({ limit: '50mb' }));
 app.use('/public', express.static(join(__dirname, '../public')));
 app.use(express.static(join(__dirname, '../../client/dist')));
 

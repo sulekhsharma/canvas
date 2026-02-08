@@ -26,8 +26,9 @@ You can provide parameters as individual form-fields or as a JSON key-value map.
 | **`logoUrl`** | `string` | No | Alternatively, a public URL to the logo image. |
 | **`templateId`** | `string` | No | The ID of a server-side template to use (e.g., `review-card`). Overrides `template`. |
 | **`template`** | `json` | No | A JSON object or string defining the design layout. Defaults to `default.json` if `templateId` is not provided. |
-| **`primaryColor`** | `hex` | No | The primary brand color (e.g., `#FF5733`). Used for dynamic text/decorations. |
+| **`primaryColor`** | `hex` | No | The primary brand color (e.g., `#FF5733`). Used as a fallback for dynamic elements. |
 | **`secondaryColor`**| `hex` | No | The secondary brand color. |
+| **`elementColors`** | `JSON` | No | **(New)** A map of element IDs to specific hex colors (e.g., `{"main-qr": "#4285F4"}`). Overrides primary/secondary colors for specific fields. |
 | **`businessAddress`**| `string`| No | The business address string. |
 | **`mobileNumber`** | `string` | No | Contact mobile number. |
 | **`email`** | `string` | No | Contact email address. |
@@ -55,6 +56,10 @@ curl -X POST https://your-domain.com/api/generate-qr \
     "businessName": "My Business Inc.",
     "primaryColor": "#000000",
     "secondaryColor": "#4285F4",
+    "elementColors": {
+      "main-qr": "#4285F4",
+      "hook": "#ea4335"
+    },
     "hookText": "Loved your service?",
     "ctaText": "Scan to leave a review"
   }'
@@ -96,14 +101,44 @@ curl -X GET https://your-domain.com/api/templates
 ```json
 [
   {
-    "id": "review-card",
-    "name": "Review Card",
-    "preview": null
+    "id": "gmb_qr_minimal_premium_v2",
+    "name": "Minimal Premium Poster",
+    "description": "Clean, modern layout inspired by Balaji Electronics poster."
   },
   {
-    "id": "default",
-    "name": "Portrait Minimal",
-    "preview": null
+    "id": "dental-special-v1",
+    "name": "Dental Clinic Style",
+    "description": "Inspired by modern clinic review posters with search bar branding."
+  },
+  {
+    "id": "google-review-dark-executive",
+    "name": "Dark Executive Card",
+    "description": "Premium dark-themed Google search result style card."
+  },
+  {
+    "id": "minimal-floating-card",
+    "name": "Floating Paper Card",
+    "description": "Sophisticated minimalist design with a clean 'card-on-paper' effect."
+  },
+  {
+    "id": "tech-vibrant-gradient",
+    "name": "Neon Dynamic Tech",
+    "description": "Modern vibrant style with neon accents and sharp geometry."
+  },
+  {
+    "id": "premium-clinical-v1",
+    "name": "Premium Clinical Poster",
+    "description": "Clean, healthcare-focused design with soft blue curves."
+  },
+  {
+    "id": "elite-executive-dark",
+    "name": "Elite Executive Dark",
+    "description": "Luxurious dark design with gold accents."
+  },
+  {
+    "id": "vibrant-neon-retail",
+    "name": "Neon Vibrant Retail",
+    "description": "High-energy neon theme for modern retail and cafes."
   }
 ]
 ```
