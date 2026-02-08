@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X, Briefcase, ChevronLeft, ChevronRight, Search, Image, Upload } from 'lucide-react';
+import { Trash2, Users, Layout, RefreshCw, Database, FileText, Terminal, Plus, X, Briefcase, ChevronLeft, ChevronRight, Search, Image, Upload, Save } from 'lucide-react';
 import type { User, DesignData } from './types';
 
 interface AdminPanelProps {
@@ -44,6 +44,7 @@ interface BusinessEntry {
     user_email: string;
     updated_at: string;
     source: 'Panel' | 'API';
+    details?: any;
 }
 
 export function AdminPanel({ token, onClose }: AdminPanelProps) {
@@ -68,6 +69,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
     const [showTemplateModal, setShowTemplateModal] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<any>(null);
     const [selectedLog, setSelectedLog] = useState<AdminLog | null>(null);
+    const [selectedBusiness, setSelectedBusiness] = useState<BusinessEntry | null>(null);
 
     const apiBase = import.meta.env.VITE_API_BASE || '/api';
     const serverBase = apiBase.replace(/\/api$/, '');
@@ -435,7 +437,7 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                                 </thead>
                                 <tbody>
                                     {businessData.map(d => (
-                                        <tr key={d.id}>
+                                        <tr key={d.id} onClick={() => setSelectedBusiness(d)} style={{ cursor: 'pointer' }}>
                                             <td title={d.physicalAddress}>
                                                 <div style={{ fontWeight: 600, color: '#1e293b' }}>{d.businessName}</div>
                                                 <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{d.physicalAddress}</div>
@@ -462,6 +464,13 @@ export function AdminPanel({ token, onClose }: AdminPanelProps) {
                             </table>
                         </div>
                     </div>
+                )}
+
+                {selectedBusiness && (
+                    <BusinessDetailsModal
+                        business={selectedBusiness}
+                        onClose={() => setSelectedBusiness(null)}
+                    />
                 )}
 
                 {!loading && !error && view === 'backgrounds' && (
@@ -944,6 +953,93 @@ function LogDetailsModal({ log, onClose }: { log: AdminLog, onClose: () => void 
                         <h4>Response Data</h4>
                         <pre>{log.response_body ? formatJSON(log.response_body) : 'No response body'}</pre>
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function BusinessDetailsModal({ business, onClose }: { business: BusinessEntry, onClose: () => void }) {
+    const details = business.details || {};
+
+    // Define high priority fields to show first
+    const primaryFields = [
+        { label: 'Business Name', value: business.businessName },
+        { label: 'GMB URL', value: business.gmbUrl, isUrl: true },
+        { label: 'Physical Address', value: business.physicalAddress },
+        { label: 'Source', value: business.source },
+        { label: 'User', value: business.user_email },
+        { label: 'Date Captured', value: new Date(business.updated_at).toLocaleString() }
+    ];
+
+    // Filter out internal fields already shown in primary or metadata
+    const excludedKeys = ['businessName', 'gmbUrl', 'physicalAddress', 'source', 'user_email', 'updated_at', 'id', 'data'];
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal-content log-details-modal">
+                <button className="modal-close" onClick={onClose}><X size={24} /></button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <div style={{ padding: '0.5rem', background: '#dbeafe', color: '#2563eb', borderRadius: '8px' }}>
+                        <FileText size={24} />
+                    </div>
+                    <h3 style={{ margin: 0 }}>Business Record Details</h3>
+                </div>
+
+                <div className="log-info-grid">
+                    {primaryFields.map((f, i) => (
+                        <div key={i} className={`info-item ${f.label === 'GMB URL' || f.label === 'Physical Address' ? 'full-width' : ''}`}>
+                            <label>{f.label}</label>
+                            {f.isUrl ? (
+                                <a href={f.value} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.9rem' }}>
+                                    {f.value}
+                                </a>
+                            ) : (
+                                <span>{f.value}</span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="log-data-sections" style={{ marginTop: '1.5rem' }}>
+                    <div className="data-section">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <Save size={16} color="#64748b" />
+                            <h4 style={{ margin: 0 }}>Full Saved Data</h4>
+                        </div>
+                        <div style={{
+                            background: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            padding: '1rem',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                            gap: '1rem'
+                        }}>
+                            {Object.entries(details).map(([key, value]) => {
+                                if (excludedKeys.includes(key)) return null;
+                                // Handle complex objects or arrays
+                                const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                                if (!displayValue || displayValue === 'undefined' || displayValue === 'null') return null;
+
+                                return (
+                                    <div key={key} className="info-item">
+                                        <label style={{ fontSize: '0.65rem' }}>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</label>
+                                        <span style={{ fontWeight: 500, color: '#334155' }}>{displayValue}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="data-section">
+                        <h4>Raw JSON</h4>
+                        <pre>{JSON.stringify(details, null, 2)}</pre>
+                    </div>
+                </div>
+
+                <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button onClick={onClose} className="sync-btn" style={{ background: '#64748b' }}>Close Details</button>
                 </div>
             </div>
         </div>

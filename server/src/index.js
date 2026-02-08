@@ -300,7 +300,8 @@ app.get('/api/admin/business-data', authenticateToken, authenticateAdmin, (req, 
                 physicalAddress: parsedData.physicalAddress || parsedData.business_address || '-',
                 user_email: d.user_email || 'guest',
                 updated_at: d.updated_at,
-                source: 'Panel'
+                source: 'Panel',
+                details: parsedData
             };
         });
 
@@ -331,14 +332,15 @@ app.get('/api/admin/business-data', authenticateToken, authenticateAdmin, (req, 
             } catch (e) { }
 
             return {
-                id: `log-${l.id}`,
+                id: l.id ? `log-${l.id}` : `log-${uuidv4()}`,
                 businessName: parsedData.businessName || parsedData.business_name || parsedData.businessname || '-',
                 gmbUrl: parsedData.gmbUrl || '-',
                 hookText: parsedData.hookText || '-',
                 physicalAddress: parsedData.physicalAddress || parsedData.businessAddress || parsedData.business_address || '-',
                 user_email: l.user_email || 'anonymous',
                 updated_at: l.updated_at,
-                source: 'API'
+                source: 'API',
+                details: parsedData
             };
         });
 
