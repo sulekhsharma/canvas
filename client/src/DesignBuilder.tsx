@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { DesignData, DesignTemplate } from './types';
 import QRCode from 'qrcode';
-import { ArrowLeft, Download, Image as ImageIcon, FileText, Loader2, Save, Check } from 'lucide-react';
+import { ArrowLeft, Download, Image as ImageIcon, FileText, Loader2, Save, Check, X } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 const SERVER_BASE = API_BASE.replace(/\/api$/, '');
@@ -54,6 +54,7 @@ export const DesignBuilder: React.FC<{
     const [isSaving, setIsSaving] = useState(false);
     const [backgrounds, setBackgrounds] = useState<any[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [showBgModal, setShowBgModal] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE}/backgrounds`)
@@ -344,56 +345,42 @@ export const DesignBuilder: React.FC<{
                     <div className="input-group" style={{ marginTop: '1rem' }}>
                         <label>Background Decoration</label>
 
-                        <div className="file-upload">
-                            <label htmlFor="bg-upload" className="file-label">
-                                <ImageIcon size={18} /> {data.backgroundImageUrl ? 'Change/Upload' : 'Upload Overlay'}
-                            </label>
-                            <input id="bg-upload" type="file" accept="image/*,image/svg+xml" onChange={handleBackgroundUpload} className="hidden" />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                            <div className="file-upload">
+                                <label htmlFor="bg-upload" className="file-label" style={{ height: '100%', justifyContent: 'center' }}>
+                                    <ImageIcon size={18} /> Upload
+                                </label>
+                                <input id="bg-upload" type="file" accept="image/*,image/svg+xml" onChange={handleBackgroundUpload} className="hidden" />
+                            </div>
+
+                            <button
+                                onClick={() => setShowBgModal(true)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.7rem',
+                                    background: '#f1f5f9',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.8rem',
+                                    color: '#475569',
+                                    cursor: 'pointer',
+                                    fontWeight: 600
+                                }}
+                            >
+                                <ImageIcon size={18} /> Library
+                            </button>
                         </div>
 
-                        {backgrounds.length > 0 && (
-                            <div className="bg-library-selector" style={{ marginTop: '0.8rem' }}>
-                                <label style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '0.4rem', display: 'block' }}>Choose from Library</label>
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(5, 1fr)',
-                                    gap: '4px',
-                                    background: '#f1f5f9',
-                                    padding: '4px',
-                                    borderRadius: '8px'
-                                }}>
-                                    {backgrounds.map(bg => (
-                                        <button
-                                            key={bg.id}
-                                            onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: bg.url })); setHasUnsavedChanges(true); }}
-                                            style={{
-                                                padding: 0,
-                                                border: data.backgroundImageUrl === bg.url ? '2px solid #4f46e5' : '1px solid #e2e8f0',
-                                                borderRadius: '4px',
-                                                overflow: 'hidden',
-                                                height: '30px',
-                                                background: '#eee'
-                                            }}
-                                            title={bg.name}
-                                        >
-                                            <img src={getAssetUrl(bg.url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        </button>
-                                    ))}
-                                    <button
-                                        onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: undefined })); setHasUnsavedChanges(true); }}
-                                        style={{
-                                            padding: 0,
-                                            border: !data.backgroundImageUrl ? '2px solid #4f46e5' : '1px solid #e2e8f0',
-                                            borderRadius: '4px',
-                                            background: 'white',
-                                            fontSize: '0.6rem',
-                                            height: '30px'
-                                        }}
-                                    >
-                                        None
-                                    </button>
-                                </div>
-                            </div>
+                        {data.backgroundImageUrl && (
+                            <button
+                                className="remove-btn"
+                                onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: undefined })); setHasUnsavedChanges(true); }}
+                            >
+                                Remove Overlay
+                            </button>
                         )}
                     </div>
                 </section>
@@ -438,6 +425,130 @@ export const DesignBuilder: React.FC<{
                     </div>
                     {hasUnsavedChanges && <p className="save-hint">Please save before downloading</p>}
                 </div>
+                {showBgModal && (
+                    <div className="modal-overlay" style={{
+                        position: 'fixed',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(15, 23, 42, 0.7)',
+                        backdropFilter: 'blur(8px)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '2rem'
+                    }}>
+                        <div className="modal-content" style={{
+                            background: 'white',
+                            borderRadius: '24px',
+                            width: '100%',
+                            maxWidth: '800px',
+                            maxHeight: '80vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                        }}>
+                            <div className="modal-header" style={{
+                                padding: '1.5rem 2rem',
+                                borderBottom: '1px solid #f1f5f9',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}>
+                                <div>
+                                    <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1e293b' }}>Background Library</h2>
+                                    <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.9rem' }}>Choose a premium overlay for your design</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowBgModal(false)}
+                                    style={{
+                                        background: '#f1f5f9',
+                                        border: 'none',
+                                        padding: '0.5rem',
+                                        borderRadius: '50%',
+                                        cursor: 'pointer',
+                                        color: '#64748b'
+                                    }}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="modal-body" style={{
+                                padding: '2rem',
+                                overflowY: 'auto',
+                                flex: 1
+                            }}>
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                                    gap: '1.5rem'
+                                }}>
+                                    <div
+                                        onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: undefined })); setHasUnsavedChanges(true); setShowBgModal(false); }}
+                                        style={{
+                                            border: !data.backgroundImageUrl ? '3px solid #4f46e5' : '1px solid #e2e8f0',
+                                            borderRadius: '16px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: '#f8fafc',
+                                            cursor: 'pointer',
+                                            minHeight: '140px',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <X size={32} style={{ color: '#94a3b8', marginBottom: '0.5rem' }} />
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>None</span>
+                                    </div>
+
+                                    {backgrounds.map(bg => (
+                                        <div
+                                            key={bg.id}
+                                            onClick={() => { setData(prev => ({ ...prev, backgroundImageUrl: bg.url })); setHasUnsavedChanges(true); setShowBgModal(false); }}
+                                            style={{
+                                                border: data.backgroundImageUrl === bg.url ? '3px solid #4f46e5' : '1px solid #e2e8f0',
+                                                borderRadius: '16px',
+                                                overflow: 'hidden',
+                                                cursor: 'pointer',
+                                                background: 'white',
+                                                transition: 'all 0.2s',
+                                                position: 'relative',
+                                                boxShadow: data.backgroundImageUrl === bg.url ? '0 10px 15px -3px rgba(79, 70, 229, 0.2)' : 'none'
+                                            }}
+                                        >
+                                            <div style={{ paddingBottom: '75%', position: 'relative', background: '#f1f5f9' }}>
+                                                <img
+                                                    src={getAssetUrl(bg.url)}
+                                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            </div>
+                                            <div style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bg.name}</div>
+                                                <div style={{ fontSize: '0.65rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{bg.category}</div>
+                                            </div>
+                                            {data.backgroundImageUrl === bg.url && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '0.5rem',
+                                                    right: '0.5rem',
+                                                    background: '#4f46e5',
+                                                    color: 'white',
+                                                    padding: '2px',
+                                                    borderRadius: '50%',
+                                                    display: 'flex'
+                                                }}>
+                                                    <Check size={12} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </aside>
 
             <main className="preview-area">
