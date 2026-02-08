@@ -54,6 +54,7 @@
                 "id": "cta",
                 "type": "text",
                 "content": "Scan to leave a Google review",
+                "field": "ctaText",
                 "x": 1240,
                 "y": 2850,
                 "fontSize": 80,
