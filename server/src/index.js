@@ -16,15 +16,20 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
 import sharp from 'sharp';
+import { qrQueue, setupWorker } from './queue.js';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists
-const uploadsDir = join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// Ensure uploads and generated directories exist
+const uploadsDir = join(__dirname, '../public/uploads');
+const generatedDir = join(__dirname, '../public/generated');
+
+[uploadsDir, generatedDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
 
 dotenv.config();
 
@@ -821,59 +826,37 @@ app.post('/api/export/png', async (req, res) => {
 
 
 
+// Initialize BullMQ Worker
+setupWorker(renderToCanvas);
+
 app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
     try {
         const { body, file } = req;
 
         // Parse parameters
-        // Support 'data' field as JSON string, or use body directly
         let params = {};
         if (body.data) {
             try {
                 params = JSON.parse(body.data);
             } catch (e) {
-                console.error("Failed to parse data field:", e);
                 params = body;
             }
         } else {
             params = body;
         }
 
-        // Normalize keys (handle spaces, snake_case)
-        const normalizeKey = (key) => {
-            // "business_address" -> "businessAddress", "mobile number" -> "mobileNumber"
-            return key.replace(/([-_ ][a-z])/ig, ($1) => {
-                return $1.toUpperCase()
-                    .replace('-', '')
-                    .replace('_', '')
-                    .replace(' ', '');
-            });
-        };
-
+        // Normalize keys
+        const normalizeKey = (key) => key.replace(/([-_ ][a-z])/ig, ($1) => $1.toUpperCase().replace(/[-_ ]/g, ''));
         const normalizedParams = {};
         Object.keys(params).forEach(key => {
             normalizedParams[normalizeKey(key)] = params[key];
         });
-
-        // Specific mappings if regex isn't enough or for specific user requests
-        if (params['website url']) normalizedParams.websiteUrl = params['website url'];
-        if (params['mobile number']) normalizedParams.mobileNumber = params['mobile number'];
-        if (params['whatsapp number']) normalizedParams.whatsappNumber = params['whatsapp number'];
-        if (params['other_mobile number']) normalizedParams.otherMobileNumber = params['other_mobile number'];
-        if (params['email id']) normalizedParams.email = params['email id'];
-        if (params['facebookpage url']) normalizedParams.facebookUrl = params['facebookpage url'];
-        if (params['instaurl']) normalizedParams.instagramUrl = params['instaurl'];
-        if (params['linkedin url']) normalizedParams.linkedinUrl = params['linkedin url'];
-
-        // Merge back normalized params
         params = { ...params, ...normalizedParams };
 
         // Identify API User
         if (!req.user && params.email) {
             const apiUser = getOrCreateApiUser(params.email);
-            if (apiUser) {
-                req.user = apiUser; // Inject into request so logging middleware picks it up
-            }
+            if (apiUser) req.user = apiUser;
         }
 
         // Load Template
@@ -882,54 +865,48 @@ app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
             template = typeof params.template === 'string' ? JSON.parse(params.template) : params.template;
         } else if (params.templateId) {
             const t = db.prepare('SELECT data FROM templates WHERE id = ?').get(params.templateId);
-            if (t) {
-                template = JSON.parse(t.data);
-            } else {
-                throw new Error(`Template with ID '${params.templateId}' not found in database.`);
-            }
+            if (t) template = JSON.parse(t.data);
+            else throw new Error(`Template '${params.templateId}' not found.`);
         } else {
-            // Load first available template as default
             const t = db.prepare('SELECT data FROM templates LIMIT 1').get();
-            if (t) {
-                template = JSON.parse(t.data);
-            } else {
-                // Fallback minimal template if DB is empty
-                template = {
-                    id: 'fallback',
-                    dimensions: { width: 1000, height: 1000 },
-                    elements: [{ type: 'qr', x: 500, y: 500, size: 800 }]
-                };
-            }
+            template = t ? JSON.parse(t.data) : { id: 'fallback', dimensions: { width: 1000, height: 1000 }, elements: [{ type: 'qr', x: 500, y: 500, size: 800 }] };
         }
 
-        // Normalize template: Ensure dimensions exist (map from size if needed)
-        if (template && !template.dimensions && template.size) {
-            template.dimensions = template.size;
-        }
+        if (template && !template.dimensions && template.size) template.dimensions = template.size;
 
-        // Prepare Design Data
         const designData = {
             ...params,
             logoUrl: file ? file.path : (params.logoUrl || null)
         };
 
-        const canvas = await renderToCanvas(designData, template);
-
-        // Save to public/generated
+        // --- QUEUE LOGIC ---
         const fileName = `qr-${uuidv4()}.png`;
         const filePath = join(__dirname, '../public/generated', fileName);
-        const buffer = canvas.toBuffer('image/png');
-        fs.writeFileSync(filePath, buffer);
 
-        // Construct URL
+        // Add to BullMQ Queue for background processing
+        const job = await qrQueue.add('generate', {
+            designData,
+            template,
+            fileName,
+            filePath
+        }, {
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 1000 }
+        });
+
+        // For now, we wait for the job to complete to keep the API synchronous for the user
+        // In a high-traffic app, you would return the job ID immediately.
+        await job.waitUntilFinished(new (await import('bullmq')).QueueEvents('qr-generation', {
+            connection: { host: process.env.REDIS_HOST || 'localhost', port: 6379 }
+        }));
+
         const protocol = req.protocol;
         const host = req.get('host');
-        // If behind proxy (ngrok, etc), host usually correct or needs config. 
-        // For local development, this works.
         const fileUrl = `${protocol}://${host}/public/generated/${fileName}`;
 
         res.json({
             success: true,
+            jobId: job.id,
             url: fileUrl,
             downloadUrl: fileUrl
         });
@@ -940,7 +917,6 @@ app.post('/api/generate-qr', upload.single('logo'), async (req, res) => {
     }
 });
 
-// Serve React App for any other route
 // Serve React App for any other route
 app.use((req, res) => {
     res.sendFile(join(__dirname, '../../client/dist/index.html'));

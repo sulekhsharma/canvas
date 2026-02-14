@@ -11,6 +11,10 @@ services:
       - JWT_SECRET=${JWT_SECRET:-default_secret_please_change}
       - VITE_API_BASE=${VITE_API_BASE:-/api}
       - DB_PATH=/app/server/data/database.db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
     volumes:
       # Database folder (mounting folder prevents "file is directory" errors)
       - ./.site-db-and-uploads/canvas:/app/server/data
@@ -18,11 +22,12 @@ services:
       - ./.site-db-and-uploads/canvas/uploads:/app/server/public/uploads
       # Generated Files
       - ./.site-db-and-uploads/canvas/generated:/app/server/public/generated
-  # Cloudflare Tunnel
-  # tunnel:
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: n8n-auto-m8
-  #   restart: always
-  #   command: tunnel run
-  #   environment:
-  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+
+  redis:
+    image: redis:alpine
+    container_name: canvas-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./.site-db-and-uploads/redis:/data
